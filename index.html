@@ -304,6 +304,21 @@ textarea.input{min-height:96px;resize:vertical}
 .ex .tip{grid-column:1/-1;font-size:.82rem;color:var(--ink2)}
 .bul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:4px}
 
+.fcard{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--r-md);background:#fff}
+.fcard .main{flex:1;min-width:0}
+.fcard .nm{font-weight:700;overflow-wrap:anywhere}
+.fcard .sub{font-size:.82rem;color:var(--ink2)}
+.fcard .kc{font-family:var(--f-display);font-size:1.05rem;white-space:nowrap;color:var(--ink2)}
+.fbadges{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:2px}
+.fb{font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink)}
+.fb.u{background:var(--prot-soft);color:var(--prot)}
+.fb.r{background:var(--fat-soft);color:#0E7A61}
+.add-btn{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);background:#fff;font-size:1.4rem;line-height:1;color:var(--ink2);flex:none}
+.add-btn.on{background:var(--accent);border-color:var(--accent);color:#fff;font-size:.85rem;font-weight:700}
+.cartbar{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:6px -18px 0;padding:10px 18px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1.5px solid var(--line)}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:#fff;font-weight:700}
+.qty b{min-width:44px;text-align:center;font-family:var(--f-display);font-weight:400}
 .toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-weight:600;font-size:.92rem;max-width:calc(100% - 32px);text-align:center}
 
 .banner{margin-bottom:12px}
@@ -568,12 +583,12 @@ textarea.input{min-height:96px;resize:vertical}
     <div class="stack">
       <div class="chips" id="slotChips" role="group" aria-label="끼니"></div>
       <div class="seg" role="group" aria-label="입력 방법">
-        <button data-seg="food" data-v="talk" aria-pressed="true">말·글</button>
-        <button data-seg="food" data-v="photo" aria-pressed="false">사진</button>
-        <button data-seg="food" data-v="search" aria-pressed="false">검색</button>
-        <button data-seg="food" data-v="manual" aria-pressed="false">직접</button>
+        <button data-seg="food" data-v="search" aria-pressed="true">검색</button>
+        <button data-seg="food" data-v="talk" aria-pressed="false">말·글 AI</button>
+        <button data-seg="food" data-v="photo" aria-pressed="false">사진 AI</button>
+        <button data-seg="food" data-v="manual" aria-pressed="false">직접 등록</button>
       </div>
-      <div id="food-talk" class="stack" style="gap:10px">
+      <div id="food-talk" class="stack" style="gap:10px" hidden>
         <textarea class="input" id="foodText" placeholder="예: 점심에 제육볶음 덮밥 한 그릇이랑 콜라 한 캔 먹었어"></textarea>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn ghost" data-act="voice" data-target="foodText" data-hint="voiceHint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>말로 입력</span></button>
@@ -592,9 +607,14 @@ textarea.input{min-height:96px;resize:vertical}
         <input class="input" id="photoMemo" placeholder="덧붙일 설명 (선택) 예: 밥은 반 공기만 먹음">
         <button class="btn" data-act="ai-photo" id="photoBtn" disabled>사진으로 분석</button>
       </div>
-      <div id="food-search" class="stack" style="gap:10px" hidden>
-        <input class="input" id="foodQ" placeholder="음식 이름 검색 (예: 닭가슴살, 김밥)" autocomplete="off">
-        <div id="foodResults" class="list"></div>
+      <div id="food-search" class="stack" style="gap:10px">
+        <input class="input" id="foodQ" type="search" placeholder="음식 검색 (예: 햇반, 닭가슴살, ㄱㅂ)" autocomplete="off">
+        <div class="chips" role="group" aria-label="목록 범위">
+          <button type="button" class="chip" data-act="food-filter" data-v="all" aria-pressed="true">전체</button>
+          <button type="button" class="chip" data-act="food-filter" data-v="base" aria-pressed="false">유저 등록 제외</button>
+          <button type="button" class="chip" data-act="food-filter" data-v="user" aria-pressed="false">유저 등록만</button>
+        </div>
+        <div id="foodResults" class="stack" style="gap:8px"></div>
       </div>
       <form id="food-manual" class="stack" style="gap:10px" hidden>
         <label class="f">음식 이름<input class="input" id="mName" required maxlength="40"></label>
@@ -605,9 +625,11 @@ textarea.input{min-height:96px;resize:vertical}
           <label class="f">단백질(g)<input class="input" id="mP" type="number" min="0" step="0.1" inputmode="decimal"></label>
           <label class="f">지방(g)<input class="input" id="mF" type="number" min="0" step="0.1" inputmode="decimal"></label>
         </div>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-weight:600;font-size:.92rem"><input type="checkbox" id="mShare" checked style="width:18px;height:18px;margin-top:3px;accent-color:var(--accent)"> <span>음식 목록에 등록해서 다른 사용자도 검색할 수 있게 하기<br><span class="tiny">포장지 영양성분표를 보고 1회 제공량 기준으로 적어 주세요.</span></span></label>
         <button class="btn block" type="submit">기록하기</button>
       </form>
       <div id="aiFoodOut" class="stack" style="gap:10px"></div>
+      <div class="cartbar" id="cartBar" hidden></div>
     </div>
   </div>
 </div>
@@ -678,6 +700,7 @@ textarea.input{min-height:96px;resize:vertical}
 <div class="toast" id="toast" hidden></div>
 
 <script src="/vendor/supabase.js"></script>
+<script src="/foods.js"></script>
 <script>
 (() => {
 'use strict';
@@ -713,21 +736,6 @@ const METRICS = {
   burnKcal: {name:'운동 소모 칼로리 합계', unit:'kcal', def:2000},
   workDays: {name:'운동한 날 수', unit:'일', def:4},
 };
-/* name, amount, kcal, carb, protein, fat — Korean standard servings */
-const FOODS = [
- ['흰쌀밥','1공기 210g',315,69,6,0.6],['현미밥','1공기 210g',300,63,6.5,2.2],['잡곡밥','1공기 210g',310,66,7,1.5],['오트밀','40g',150,27,5,3],
- ['닭가슴살','100g',109,0,23,1.2],['훈제 닭가슴살','1팩 100g',120,2,22,2.5],['삶은 달걀','1개',75,0.6,6.3,5],['달걀 흰자','1개',17,0.2,3.6,0],
- ['소고기 우둔살','100g',150,0,22,6],['돼지 삼겹살','100g',330,0,17,29],['연어','100g',206,0,22,13],['고등어구이','1토막 100g',230,0,21,16],
- ['두부','1/2모 150g',120,3,13,7],['그릭요거트(무가당)','150g',140,6,15,6],['우유','1컵 200ml',130,10,6.5,7],['프로틴 쉐이크','1스쿱+물',120,3,24,1.5],
- ['고구마','1개 150g',195,46,2.4,0.3],['감자','1개 150g',115,26,3,0.2],['바나나','1개',105,27,1.3,0.4],['사과','1개',95,25,0.5,0.3],
- ['아몬드','20알 25g',145,5,5,12.5],['땅콩버터','1큰술',95,3,4,8],['아보카도','1/2개',120,6,1.5,11],['브로콜리','100g',34,7,2.8,0.4],
- ['양배추 샐러드','1접시',60,10,2,1.5],['김치','1접시 50g',15,2.5,1,0.3],['김밥','1줄',480,72,14,15],['라면','1봉',500,79,10,16],
- ['제육볶음','1인분',410,18,28,25],['제육덮밥','1그릇',720,95,30,24],['비빔밥','1그릇',580,92,18,15],['김치찌개','1인분',220,10,15,13],
- ['된장찌개','1인분',160,12,11,7],['불고기','1인분',380,16,30,21],['치킨(프라이드)','2조각',510,20,32,33],['피자','1조각',290,33,12,12],
- ['떡볶이','1인분',480,100,10,5],['짜장면','1그릇',785,120,20,23],['햄버거','1개',540,45,25,28],['샌드위치','1개',380,42,18,15],
- ['식빵','1장',80,15,2.7,1],['아메리카노','1잔',10,1.5,0.6,0],['카페라떼','1잔 355ml',180,15,10,8],['콜라','1캔 355ml',150,39,0,0],
- ['맥주','1캔 500ml',215,17,2,0],['소주','1병',405,0,0,0],['치즈','1장',60,0.5,4,4.8],['베이컨','2줄',90,0.2,6,7],
-];
 const EX = {
   가슴:[['벤치프레스','4세트 × 8–10회','마지막 2회가 힘들 무게'],['인클라인 덤벨프레스','3 × 10','윗가슴 집중'],['딥스','3 × 10','상체를 살짝 앞으로'],['케이블 플라이','3 × 12–15','천천히 짜내기']],
   등:[['랫풀다운','4 × 10','팔꿈치를 옆구리로'],['바벨 로우','4 × 8','허리 중립 유지'],['시티드 케이블 로우','3 × 12','견갑 모으기'],['페이스풀','3 × 15','후면 어깨·자세 교정']],
@@ -759,7 +767,7 @@ const shortDate = k => { const d = parseKey(k); return `${d.getMonth()+1}/${d.ge
 const S = {
   aiOn:false, uid:null, email:'',
   me:null, days:{}, profiles:{}, posts:[], challenges:[], cheers:[], friends:{},
-  tab:'home', date:todayKey(), seg:{chan:'feed', rank:'week', tog:'friends', food:'talk', ob:'me'},
+  tab:'home', date:todayKey(), seg:{chan:'feed', rank:'week', tog:'friends', food:'search', ob:'me'}, cart:[], cartOpen:false, foodFilter:'all', userFoods:[], foodStats:{},
   slot:null, wkType:null, photoBlob:null, aiItems:[], pending:0, saveErr:false, dirty:{}, lastErr:null, lastErrMsg:'',
   obDraft:null, seenCheers:0, cfAction:null, openCmts:{}, vsOpen:{}, writingProg:{},
 };
@@ -929,7 +937,7 @@ async function startSession(user){
   try { await loadMine(); } catch(e){ console.warn(e); toast(errText(e?.code||'load', e?.message)); }
   if(!S.me) openOnboarding(true);
   renderAll();
-  loadSocial();
+  loadSocial(); loadFoods();
   setInterval(() => { if(!document.hidden) loadSocial(); }, 30000);
   setTimeout(retryDirty, 1500);
   window.addEventListener('online', retryDirty);
@@ -1453,18 +1461,111 @@ function openFood(){
   $('#voiceHint').textContent = '마이크 버튼이 안 되면 휴대폰 키보드의 마이크(받아쓰기)를 눌러 말해도 돼요.';
   $('#foodSheet').hidden = false;
   setSeg('food', S.seg.food);
+  renderCart();
+  if(!S.foodsReady) loadFoods();
 }
 function addMeals(items, src){
   const d = curDay();
-  for(const it of items) d.meals.push({id:uidGen(), slot:S.slot, name:String(it.name).slice(0,40), amt:String(it.amount||it.amt||'').slice(0,30), kcal:r0(it.kcal), c:r1(it.carb ?? it.c), p:r1(it.protein ?? it.p), f:r1(it.fat ?? it.f), src});
+  for(const it of items) d.meals.push({id:uidGen(), slot:S.slot, name:String(it.name).slice(0,40), amt:String(it.amount||it.amt||'').slice(0,40), kcal:r0(it.kcal), c:r1(it.carb ?? it.c), p:r1(it.protein ?? it.p), f:r1(it.fat ?? it.f), src,
+    ...(it.fkey ? {fkey:it.fkey, baseAmt:it.baseAmt, qty:it.qty} : {})});
   commitDay(d);
   toast(`${S.slot}에 ${items.length}개 기록했어요`);
 }
+/* ---------- Food catalog: built-in list + foods shared by users ---------- */
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+const norm = t => String(t||'').toLowerCase().replace(/[\s()·,.\-]/g, '');
+const chosung = t => [...t].map(ch => { const c = ch.charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 ? CHO[Math.floor(c/588)] : ch; }).join('');
+const isCho = q => /^[ㄱ-ㅎ]+$/.test(q);
+let BASE_FOODS = null;
+function catalog(){
+  if(!BASE_FOODS) BASE_FOODS = (window.NYAM_FOODS || []).map(f => ({key:'b:'+f[0]+'|'+f[1], name:f[0], amt:f[1], kcal:f[2], c:f[3], p:f[4], f:f[5], cat:f[6], user:false}));
+  const users = S.userFoods.map(u => ({key:'u:'+u.id, id:u.id, name:u.name, amt:u.amount||'1회', kcal:u.kcal, c:+u.carb, p:+u.protein, f:+u.fat, user:true, mine:u.created_by===S.uid}));
+  return S.foodFilter==='base' ? BASE_FOODS : S.foodFilter==='user' ? users : [...users, ...BASE_FOODS];
+}
+const usesOf = k => +S.foodStats[k] || 0;
+function recentFoods(){
+  const seen = new Set(), out = [];
+  for(const k of Object.keys(S.days).sort().reverse()){
+    for(const m of [...(S.days[k].meals||[])].reverse()){
+      const id = m.name+'|'+(m.baseAmt||m.amt);
+      if(seen.has(id)) continue; seen.add(id);
+      const q = +m.qty || 1;
+      out.push({key:m.fkey || 'r:'+id, name:m.name, amt:m.baseAmt||m.amt||'1회', kcal:m.kcal/q, c:m.c/q, p:m.p/q, f:m.f/q, recent:true});
+      if(out.length >= 8) return out;
+    }
+  }
+  return out;
+}
+function foodCard(it){
+  const inCart = S.cart.find(x => x.it.key===it.key), u = usesOf(it.key);
+  return `<div class="fcard"><div class="main">
+    <div class="fbadges">${u?`<span class="fb">${u>=1000?'1천':u>=100?Math.floor(u/100)*100:u>=10?Math.floor(u/10)*10:u}회 ${u>=10?'이상 ':''}기록</span>`:''}${it.user?'<span class="fb u">유저등록</span>':''}${it.recent?'<span class="fb r">최근</span>':''}</div>
+    <div class="nm">${esc(it.name)}</div><div class="sub">${esc(it.amt)} · 탄 ${r1(it.c)} · 단 ${r1(it.p)} · 지 ${r1(it.f)}g</div></div>
+    <span class="kc">${r0(it.kcal)}kcal</span>
+    <button class="add-btn ${inCart?'on':''}" data-act="cart-add" data-key="${esc(it.key)}" aria-label="${esc(it.name)} 담기">${inCart?'×'+inCart.qty:'+'}</button></div>`;
+}
+let FOOD_INDEX = {};
 function renderFoodSearch(){
-  const q = $('#foodQ').value.trim();
-  const list = (q ? FOODS.filter(f => f[0].includes(q)) : FOODS.slice(0,12));
-  $('#foodResults').innerHTML = list.length ? list.map((f,i)=>`<div class="li"><div class="main"><div class="nm">${esc(f[0])}</div><div class="sub">${esc(f[1])} · 탄 ${f[3]} · 단 ${f[4]} · 지 ${f[5]} g</div></div><span class="kc">${f[2]}</span><button class="btn sm" data-act="add-food" data-i="${FOODS.indexOf(f)}">추가</button></div>`).join('')
-    : `<p class="small muted" style="padding:10px 0">찾는 음식이 없어요. <b>말·글</b> 탭에서 AI로 분석하거나 <b>직접</b> 입력해 주세요.</p>`;
+  const q = norm($('#foodQ').value);
+  $$('[data-act="food-filter"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v===S.foodFilter));
+  const all = catalog(); let list;
+  if(!q){
+    const rec = S.foodFilter==='all' ? recentFoods() : [];
+    const pop = [...all].filter(x => usesOf(x.key)).sort((a,b) => usesOf(b.key)-usesOf(a.key)).slice(0, 15);
+    const rest = all.filter(x => !usesOf(x.key) && !rec.some(r => r.key===x.key)).slice(0, Math.max(0, 20 - pop.length));
+    list = [...rec, ...pop.filter(x => !rec.some(r => r.key===x.key)), ...rest];
+    FOOD_INDEX = Object.fromEntries([...all, ...rec].map(x => [x.key, x]));
+    $('#foodResults').innerHTML = (rec.length?'<div class="section-label">최근 먹은 음식</div>':'') + rec.map(foodCard).join('')
+      + (pop.length ? `<div class="section-label" style="margin-top:6px">많이 기록하는 음식</div>` + pop.filter(x => !rec.some(r => r.key===x.key)).map(foodCard).join('') : '')
+      + (rest.length ? `<div class="section-label" style="margin-top:6px">음식 목록</div>` + rest.map(foodCard).join('') : '')
+      + `<p class="tiny" style="text-align:center">음식 ${all.length.toLocaleString()}개 중에서 검색할 수 있어요</p>`;
+    return;
+  }
+  const cho = isCho(q);
+  list = all.map(x => { const n = norm(x.name); const hit = cho ? chosung(n).includes(q) : n.includes(q) || norm(x.cat||'').includes(q);
+      return hit ? {x, score:(n.startsWith(q)||chosung(n).startsWith(q)?2:0) + Math.log10(1+usesOf(x.key)) - n.length/100} : null; })
+    .filter(Boolean).sort((a,b) => b.score-a.score).slice(0, 60).map(o => o.x);
+  FOOD_INDEX = Object.fromEntries(all.map(x => [x.key, x]));
+  $('#foodResults').innerHTML = list.length ? list.map(foodCard).join('')
+    : `<div class="empty" style="padding:8px"><b>"${esc($('#foodQ').value.trim())}"이(가) 목록에 없어요</b><span class="small">직접 등록하면 다른 사용자도 찾을 수 있어요</span><button class="btn sm" data-act="food-register">직접 등록하기</button></div>`;
+  if(list.length) $('#foodResults').insertAdjacentHTML('beforeend', `<button class="btn plain sm" data-act="food-register" style="align-self:center">찾는 음식이 없나요? 직접 등록하기</button>`);
+}
+function cartAdd(key){
+  const it = FOOD_INDEX[key]; if(!it) return;
+  const c = S.cart.find(x => x.it.key===key);
+  if(c) c.qty = Math.min(10, c.qty + 1); else S.cart.push({it, qty:1});
+  renderFoodSearch(); renderCart();
+}
+function cartTotals(){ return S.cart.reduce((a,x) => ({kcal:a.kcal+x.it.kcal*x.qty, c:a.c+x.it.c*x.qty, p:a.p+x.it.p*x.qty, f:a.f+x.it.f*x.qty}), {kcal:0,c:0,p:0,f:0}); }
+function renderCart(){
+  const bar = $('#cartBar'); bar.hidden = !S.cart.length;
+  if(!S.cart.length){ S.cartOpen = false; return; }
+  const t = cartTotals();
+  bar.innerHTML = (S.cartOpen ? `<div class="stack" style="gap:8px;max-height:40vh;overflow:auto;margin-bottom:10px">${S.cart.map((x,i)=>`
+      <div class="li" style="border:0;padding:4px 0"><div class="main"><div class="nm">${esc(x.it.name)}</div><div class="sub">${esc(x.it.amt)} × ${x.qty} · ${r0(x.it.kcal*x.qty)}kcal</div></div>
+      <div class="qty"><button data-act="cart-qty" data-i="${i}" data-d="-0.5" aria-label="줄이기">−</button><b>${x.qty}</b><button data-act="cart-qty" data-i="${i}" data-d="0.5" aria-label="늘리기">+</button></div></div>`).join('')}</div>` : '')
+    + `<div style="display:flex;gap:8px;align-items:center"><button class="btn plain" data-act="cart-toggle" style="flex:1;justify-content:space-between"><span>${S.cart.length}개 담겼어요</span><span class="num">${r0(t.kcal)} kcal ${S.cartOpen?'▾':'▴'}</span></button><button class="btn" data-act="cart-save">${S.slot} 기록</button></div>`;
+}
+function cartSave(){
+  if(!S.cart.length) return;
+  const items = S.cart.map(x => ({name:x.it.name, amount: x.qty===1 ? x.it.amt : `${x.it.amt} ×${x.qty}`, kcal:x.it.kcal*x.qty, carb:x.it.c*x.qty, protein:x.it.p*x.qty, fat:x.it.f*x.qty, fkey:x.it.key, baseAmt:x.it.amt, qty:x.qty}));
+  addMeals(items, 'db');
+  for(const x of S.cart) if(!x.it.key.startsWith('r:')) bumpFood(x.it.key);
+  S.cart = []; S.cartOpen = false; renderCart(); $('#foodSheet').hidden = true; $('#foodQ').value = '';
+}
+function bumpFood(key){
+  S.foodStats[key] = usesOf(key) + 1;
+  sb?.rpc('bump_food', {k:key}).then(r => { if(r.error) console.warn('bump_food', r.error.message); });
+}
+async function loadFoods(){
+  try {
+    const [foods, stats] = await Promise.all([
+      must(sb.from('foods').select('*').order('created_at', {ascending:false}).limit(3000)),
+      must(sb.from('food_stats').select('key,uses').order('uses', {ascending:false}).limit(5000)),
+    ]);
+    S.userFoods = foods; S.foodStats = Object.fromEntries(stats.map(x => [x.key, x.uses])); S.foodsReady = true;
+    if(!$('#foodSheet').hidden && S.seg.food==='search') renderFoodSearch();
+  } catch(e){ S.foodsReady = false; console.warn('foods not ready', e); }
 }
 function thinking(msg){ return `<div class="thinking"><span class="bounce"><i></i><i></i><i></i></span>${msg}</div>`; }
 async function aiFood(text, image){
@@ -1730,7 +1831,7 @@ document.addEventListener('click', async e => {
     case 'open-work': openWork(); break;
     case 'close-sheet': b.closest('.overlay').hidden = true; break;
     case 'close-ob': $('#obSheet').hidden = true; break;
-    case 'slot': S.slot = b.dataset.v; $$('#slotChips .chip').forEach(c=>c.setAttribute('aria-pressed', c.dataset.v===S.slot)); { const sb = $('[data-act="save-ai"]'); if(sb) sb.textContent = `${S.slot}에 기록하기`; } break;
+    case 'slot': S.slot = b.dataset.v; $$('#slotChips .chip').forEach(c=>c.setAttribute('aria-pressed', c.dataset.v===S.slot)); { const sb = $('[data-act="save-ai"]'); if(sb) sb.textContent = `${S.slot}에 기록하기`; } renderCart(); break;
     case 'voice': startVoice(b.dataset.target, b, b.dataset.hint); break;
     case 'ai-food': { const txt = $('#foodText').value.trim(); if(!txt){ toast('먹은 음식을 적거나 말해 주세요'); $('#foodText').focus(); break; } aiFood(txt); break; }
     case 'ai-photo': if(S.photoBlob) aiFood($('#photoMemo').value.trim(), S.photoBlob); break;
@@ -1739,7 +1840,12 @@ document.addEventListener('click', async e => {
       if(!items.length){ toast('기록할 음식을 골라 주세요'); break; }
       addMeals(items, b.dataset.src); $('#foodSheet').hidden = true; $('#foodText').value = ''; $('#photoMemo').value=''; S.photoBlob = null; $('#photoPrev').hidden = true; $('#photoBtn').disabled = true; break;
     }
-    case 'add-food': { const f = FOODS[+b.dataset.i]; addMeals([{name:f[0], amount:f[1], kcal:f[2], carb:f[3], protein:f[4], fat:f[5]}], 'db'); break; }
+    case 'cart-add': cartAdd(b.dataset.key); break;
+    case 'cart-qty': { const x = S.cart[+b.dataset.i]; if(!x) break; x.qty = Math.max(0, Math.min(10, x.qty + +b.dataset.d)); if(!x.qty) S.cart.splice(+b.dataset.i, 1); renderCart(); renderFoodSearch(); break; }
+    case 'cart-toggle': S.cartOpen = !S.cartOpen; renderCart(); break;
+    case 'cart-save': cartSave(); break;
+    case 'food-filter': S.foodFilter = b.dataset.v; renderFoodSearch(); break;
+    case 'food-register': { const q = $('#foodQ').value.trim(); setSeg('food','manual'); if(q) $('#mName').value = q; $('#mName').focus(); break; }
     case 'del-meal': { const d = curDay(); d.meals = d.meals.filter(m=>m.id!==id); commitDay(d); break; }
     case 'del-work': { const d = curDay(); d.workouts = d.workouts.filter(w=>w.id!==id); commitDay(d); break; }
     case 'wk': S.wkType = b.dataset.v; $$('[data-act="wk"]').forEach(c=>c.setAttribute('aria-pressed', c.dataset.v===S.wkType)); calcWork(); break;
@@ -1799,8 +1905,18 @@ document.addEventListener('submit', e => {
   if(f.id==='chalForm') return createChallenge(e);
   e.preventDefault();
   if(f.id==='food-manual'){
-    addMeals([{name:$('#mName').value.trim(), amount:$('#mAmt').value.trim(), kcal:+$('#mK').value, carb:+$('#mC').value||0, protein:+$('#mP').value||0, fat:+$('#mF').value||0}], 'manual');
-    f.reset(); $('#foodSheet').hidden = true;
+    const food = {name:$('#mName').value.trim().slice(0,40), amount:($('#mAmt').value.trim() || '1회').slice(0,30), kcal:Math.round(+$('#mK').value), carb:+$('#mC').value||0, protein:+$('#mP').value||0, fat:+$('#mF').value||0};
+    if($('#mShare').checked && sb){
+      queue('food:new', async () => {
+        const row = await must(sb.from('foods').insert({...food, created_by:S.uid}).select('*').single());
+        S.userFoods.unshift(row); bumpFood('u:'+row.id);
+        const d = curDay(); const m = [...d.meals].reverse().find(x => x.name===food.name && !x.fkey);
+        if(m){ m.fkey = 'u:'+row.id; m.baseAmt = food.amount; m.qty = 1; commitDay(d); }
+        toast(`"${food.name}"을(를) 음식 목록에 등록했어요`);
+      });
+    }
+    addMeals([food], 'manual');
+    f.reset(); $('#mShare').checked = true; $('#foodSheet').hidden = true;
   } else if(f.id==='workForm'){
     if(!S.wkType){ toast('운동 종류를 골라 주세요'); return; }
     const d = curDay(), kind = STR.some(x=>x[0]===S.wkType) ? 'str' : 'car';
