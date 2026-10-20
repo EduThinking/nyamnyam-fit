@@ -1640,7 +1640,7 @@ async function doAuth(e){
     }
   } catch(err){
     const m = String(err?.message||'');
-    msg.innerHTML = `<div class="note warn">${/Invalid login/i.test(m) ? '이메일 또는 비밀번호가 맞지 않아요.' : /already registered/i.test(m) ? '이미 가입된 이메일이에요. 로그인해 주세요.' : /Email not confirmed/i.test(m) ? '메일함에서 가입 확인 링크를 먼저 눌러 주세요.' : /fetch/i.test(m) ? '인터넷 연결을 확인해 주세요.' : '로그인하지 못했어요: '+esc(m)}</div>`;
+    msg.innerHTML = `<div class="note warn">${/Invalid login/i.test(m) ? '이메일 또는 비밀번호가 맞지 않아요.' : /already registered/i.test(m) ? '이미 가입된 이메일이에요. 로그인해 주세요.' : /Email not confirmed/i.test(m) ? '메일함에서 가입 확인 링크를 먼저 눌러 주세요.' : /rate limit/i.test(m) ? '지금 가입하는 사람이 많아요. 잠시 뒤 다시 시도해 주세요.' : /Password should/i.test(m) ? '비밀번호를 6자 이상으로 정해 주세요.' : /valid email|invalid format/i.test(m) ? '이메일 주소를 다시 확인해 주세요.' : /fetch/i.test(m) ? '인터넷 연결을 확인해 주세요.' : '로그인하지 못했어요: '+esc(m)}</div>`;
   } finally { btn.disabled = false; }
 }
 
