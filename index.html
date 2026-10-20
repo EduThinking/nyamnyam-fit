@@ -332,6 +332,13 @@ textarea.input{min-height:96px;resize:vertical}
 .qty{display:flex;align-items:center;gap:6px}
 .qty button{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:#fff;font-weight:700}
 .qty b{min-width:44px;text-align:center;font-family:var(--f-display);font-weight:400}
+.reward{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rw{border-radius:var(--r-md);padding:12px 14px;display:flex;align-items:center;gap:10px;min-width:0}
+.rw .ic{font-size:1.7rem;line-height:1;flex:none;display:grid;place-items:center;width:34px}
+.rw b{font-family:var(--f-display);font-weight:400;font-size:1.5rem;display:block;line-height:1.1}
+.rw small{font-size:.76rem;font-weight:700;color:var(--ink2);display:block}
+.rw.ch{background:#FFF1D2}.rw.db{background:var(--accent-soft)}
+.gift-btn{background:#FFF1D2!important;border-color:#FFE2A3!important;color:#875900!important}
 .toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-weight:600;font-size:.92rem;max-width:calc(100% - 32px);text-align:center}
 
 .banner{margin-bottom:12px}
@@ -348,7 +355,7 @@ textarea.input{min-height:96px;resize:vertical}
       냠냠핏
     </div>
     <span class="sp"></span>
-    <span id="chanPill" class="pill chan-pill" hidden></span>
+    <button id="chanPill" class="pill chan-pill" data-act="change-goal" style="border:0" hidden aria-label="목표 바꾸기"></button>
     <button id="musicBtn" class="pill" data-act="snd-music" style="border:0;font-size:1rem;min-width:36px;justify-content:center" aria-label="배경음악">♪</button>
     <button id="savePill" class="pill" data-act="retry-save" style="border:0" aria-live="polite">연결 중</button>
   </header>
@@ -364,6 +371,7 @@ textarea.input{min-height:96px;resize:vertical}
         <button class="icon-btn" data-act="day-next" aria-label="다음 날">›</button>
       </div>
     </div>
+    <section class="card" id="rewardCard"></section>
     <div class="quick">
       <button class="qbtn" data-act="open-food"><span class="ic" style="background:var(--accent-soft);color:var(--accent-ink)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M8 7c0-2 1-3 2-3M12 7c0-2 1-3 2-3"/></svg></span><span>식단 기록<small>말·글·사진·검색</small></span></button>
       <button class="qbtn" data-act="open-work"><span class="ic" style="background:var(--prot-soft);color:var(--prot)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/></svg></span><span>운동 기록<small>부위·유산소·시간</small></span></button>
@@ -418,6 +426,7 @@ textarea.input{min-height:96px;resize:vertical}
 
   <!-- CHANNEL -->
   <main id="v-chan" class="stack" hidden>
+    <div style="overflow-x:auto;margin:0 -4px;padding:2px 4px"><div class="chips" id="chanChips" role="group" aria-label="채널 고르기" style="flex-wrap:nowrap"></div></div>
     <div class="seg" role="group" aria-label="채널 보기">
       <button data-seg="chan" data-v="feed" aria-pressed="true">커뮤니티</button>
       <button data-seg="chan" data-v="rank" aria-pressed="false">랭킹</button>
@@ -438,7 +447,7 @@ textarea.input{min-height:96px;resize:vertical}
     <div id="chanRank" class="stack" hidden>
       <section class="card">
         <div class="card-h"><h2 id="rankTitle">채널 랭킹</h2>
-          <div class="seg" style="min-width:150px"><button data-seg="rank" data-v="week" aria-pressed="true">이번 주</button><button data-seg="rank" data-v="all" aria-pressed="false">누적</button></div>
+          <div class="seg" style="min-width:150px"><button data-seg="rank" data-v="week" aria-pressed="true">이번 주</button><button data-seg="rank" data-v="all" aria-pressed="false">누적</button><button data-seg="rank" data-v="chicken" aria-pressed="false">🍗</button></div>
         </div>
         <div id="rankList"></div>
       </section>
@@ -486,7 +495,7 @@ textarea.input{min-height:96px;resize:vertical}
   <main id="v-me" class="stack" hidden>
     <section class="card" id="meCard"></section>
     <section class="card">
-      <div class="card-h"><h2>나의 하루 목표</h2><span class="tiny">신체 정보로 계산</span></div>
+      <div class="card-h"><h2>나의 하루 목표</h2><button class="btn sm ghost" data-act="change-goal">목표 바꾸기</button></div>
       <div id="targetBox"></div>
     </section>
     <section class="card">
@@ -706,6 +715,15 @@ textarea.input{min-height:96px;resize:vertical}
   </div>
 </div>
 
+<!-- Gift sheet -->
+<div class="overlay" id="giftSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="giftTitle">
+    <div class="grab"></div>
+    <div class="sheet-h"><h2 id="giftTitle">덤벨 선물하기</h2><button class="x-btn" data-act="close-sheet" aria-label="닫기">✕</button></div>
+    <div id="giftBody" class="stack"></div>
+  </div>
+</div>
+
 <!-- Confirm sheet -->
 <div class="overlay" id="confirmSheet" hidden>
   <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle">
@@ -786,7 +804,7 @@ const shortDate = k => { const d = parseKey(k); return `${d.getMonth()+1}/${d.ge
 const S = {
   aiOn:false, uid:null, email:'',
   me:null, days:{}, profiles:{}, posts:[], challenges:[], cheers:[], friends:{},
-  tab:'home', date:todayKey(), seg:{chan:'feed', rank:'week', tog:'friends', food:'search', ob:'me'}, cart:[], cartOpen:false, foodFilter:'all', userFoods:[], foodStats:{},
+  tab:'home', date:todayKey(), seg:{chan:'feed', rank:'week', tog:'friends', food:'search', ob:'me'}, cart:[], cartOpen:false, wallet:null, gift:{to:null, amount:10, emoji:'💪'}, foodFilter:'all', userFoods:[], foodStats:{},
   slot:null, wkType:null, photoBlob:null, aiItems:[], pending:0, saveErr:false, dirty:{}, lastErr:null, lastErrMsg:'',
   obDraft:null, seenCheers:0, cfAction:null, openCmts:{}, vsOpen:{}, writingProg:{},
 };
@@ -816,6 +834,7 @@ function macroOk(t, T, ch){
   if(ch==='keto') return t.c <= T.c && t.f >= T.f*0.7;
   return t.c >= T.c*0.7 && t.c <= T.c*1.15 && t.f >= T.f*0.6 && t.f <= T.f*1.2;
 }
+const kcalHit = (t, T) => t.meals > 0 && Math.abs(t.kcal - T.kcal) <= T.kcal*0.1;
 function dayPoints(d, T, ch){
   const t = dayTotals(d); if(!T) return 0;
   let pts = Math.min(t.meals,4)*5;
@@ -915,6 +934,13 @@ function commitDay(d){
   p.lifetime = Math.max(0, (+p.lifetime||0) - old + nw);
   const cutoff = addDays(todayKey(), -60);
   for(const k of Object.keys(p.dayPts)) if(k < cutoff) delete p.dayPts[k];
+  // 🍗 10 chicken breasts for a day whose intake lands within ±10% of the calorie target.
+  p.chickenDays = {...(p.chickenDays||{})};
+  const tt = dayTotals(d), oldCh = +p.chickenDays[d.date] || 0, nwCh = !empty && kcalHit(tt, T) ? 10 : 0;
+  if(nwCh) p.chickenDays[d.date] = nwCh; else delete p.chickenDays[d.date];
+  p.chicken = Math.max(0, (+p.chicken||0) - oldCh + nwCh);
+  for(const k of Object.keys(p.chickenDays)) if(k < cutoff) delete p.chickenDays[k];
+  if(nwCh && !oldCh && d.date === todayKey()) setTimeout(() => { toast('🍗 권장 칼로리 달성! 닭가슴살 10개를 받았어요'); Snd.cheer(); }, 600);
   if(d.date === todayKey()){
     const t = dayTotals(d);
     p.today = {date:d.date, kcal:r0(t.kcal), c:r0(t.c), p:r0(t.p), f:r0(t.f), burn:r0(t.burn), min:t.min, meals:t.meals, pts:nw};
@@ -956,7 +982,7 @@ async function startSession(user){
   try { await loadMine(); } catch(e){ console.warn(e); toast(errText(e?.code||'load', e?.message)); }
   if(!S.me) openOnboarding(true);
   renderAll();
-  loadSocial(); loadFoods();
+  loadSocial(); loadFoods(); claimGift();
   setInterval(() => { if(!document.hidden) loadSocial(); }, 30000);
   setTimeout(retryDirty, 1500);
   window.addEventListener('online', retryDirty);
@@ -999,7 +1025,7 @@ async function loadSocial(){
     S.challenges = chals.map(c => ({id:c.id, title:c.title, desc:c.descr, metric:c.metric, target:c.target, reward:c.reward, badge:c.badge, start:c.start_date, end:c.end_date, vis:c.vis, invited:c.invited||{}, creator:c.creator, createdAt:c.created_at, members:{}, progress:{}}));
     const cById = Object.fromEntries(S.challenges.map(c => [c.id, c]));
     mems.forEach(m => { const c = cById[m.challenge_id]; if(c){ c.members[m.user_id] = m.active; c.progress[m.user_id] = m.progress; } });
-    S.cheers = cheers.map(c => ({id:c.id, from:c.from_id, to:c.to_id, emoji:c.emoji, at:c.at}));
+    S.cheers = cheers.map(c => ({id:c.id, from:c.from_id, to:c.to_id, emoji:c.emoji, at:c.at, amount:+c.amount||0}));
     renderAll(); syncChallengeProgress();
   } catch(e){ console.warn('social load failed', e); }
   finally { socialBusy = false; }
@@ -1040,6 +1066,7 @@ const stateTag = (v, T, kind) => {
 const emptyArt = (title, body) => `<div class="empty"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="36" r="22" fill="#FFF0F4"/><path d="M14 38h36a18 18 0 0 1-36 0z" fill="#fff" stroke="#2A2233" stroke-width="2.5"/><circle cx="26" cy="44" r="2" fill="#2A2233"/><circle cx="38" cy="44" r="2" fill="#2A2233"/><path d="M29 49q3 2 6 0" fill="none" stroke="#2A2233" stroke-width="2" stroke-linecap="round"/><path d="M24 30c0-4 2-6 4-6M34 30c0-4 2-6 4-6" stroke="#FF9DB9" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg><b>${title}</b><span class="small">${body}</span></div>`;
 
 function renderHome(){
+  renderReward();
   const T = targetsFor(S.me), d = S.days[S.date], t = dayTotals(d);
   $('#dateLabel').textContent = prettyDate(S.date);
   // kcal donut
@@ -1245,26 +1272,31 @@ function renderAiBox(){
 /* Channel */
 function renderChan(){
   if(!S.me) return;
-  const ch = CHANNELS[S.me.channel];
+  const vc = S.viewChan || S.me.channel, ch = CHANNELS[vc];
+  const members = k => Object.values(S.profiles).filter(p => p?.channel===k).length;
+  $('#chanChips').innerHTML = Object.entries(CHANNELS).map(([k,c]) => `<button class="chip" data-act="view-chan" data-v="${k}" aria-pressed="${vc===k}" style="white-space:nowrap">${c.name}${k===S.me.channel?' · 내 채널':''} <span style="opacity:.7">${members(k)}</span></button>`).join('');
   const social = !!S.uid;
-  $('#postLabel').textContent = `${ch.name} 채널에 이야기 남기기`;
+  $('#postLabel').textContent = vc===S.me.channel ? `${ch.name} 채널에 이야기 남기기` : `${ch.name} 채널에 놀러 왔어요 · 이야기 남기기`;
   $('#rankTitle').textContent = `${ch.name} 랭킹`;
   $('#chanFeed').hidden = S.seg.chan!=='feed'; $('#chanRank').hidden = S.seg.chan!=='rank';
   $('#postForm').querySelectorAll('textarea,button,input').forEach(e => e.disabled = !social);
   if(!social){ $('#postList').innerHTML = `<div class="note">커뮤니티는 claude.ai에 로그인해서 열면 쓸 수 있어요.</div>`; $('#rankList').innerHTML = `<div class="note">랭킹은 로그인 후 볼 수 있어요.</div>`; return; }
-  const posts = S.posts.filter(p => p.channel===S.me.channel);
+  const posts = S.posts.filter(p => p.channel===vc);
   $('#postList').innerHTML = posts.length ? posts.map(postHtml).join('') : `<div class="card">${emptyArt('첫 글을 남겨 보세요', `${ch.name} 채널 사람들과 식단 팁과 인증을 나눠요`)}</div>`;
   // ranking
-  const ps = Object.entries(S.profiles).filter(([,p]) => p.channel===S.me.channel).map(([id,p]) => ({id, p, v: S.seg.rank==='week' ? weekPts(p) : totalPts(p)})).sort((a,b)=>b.v-a.v);
+  const chick = S.seg.rank==='chicken';
+  $('#rankTitle').textContent = chick ? '🍗 닭가슴살 랭킹 (전체)' : `${ch.name} 랭킹`;
+  const ps = Object.entries(S.profiles).filter(([,p]) => p?.nick && (chick || p.channel===vc)).map(([id,p]) => ({id, p, v: chick ? (+p.chicken||0) : S.seg.rank==='week' ? weekPts(p) : totalPts(p)})).sort((a,b)=>b.v-a.v);
   if(!ps.length){ $('#rankList').innerHTML = emptyArt('아직 랭킹이 없어요','기록을 시작하면 점수가 쌓여요'); return; }
   const top = ps.slice(0,3);
-  const podium = ps.length>=3 ? `<div class="podium">${[1,0,2].map(i=>{const x=top[i]; return `<div class="${i===0?'p1':''}"><div class="av" style="margin:0 auto 4px">${esc(x.p.avatar||'🐰')}</div><div class="nm">${esc(x.p.nick)}</div><div class="num">${x.v}점</div><div class="tiny">${i+1}위</div></div>`;}).join('')}</div>` : '';
+  const podium = ps.length>=3 ? `<div class="podium">${[1,0,2].map(i=>{const x=top[i]; return `<div class="${i===0?'p1':''}"><div class="av" style="margin:0 auto 4px">${esc(x.p.avatar||'🐰')}</div><div class="nm">${esc(x.p.nick)}</div><div class="num">${x.v}${chick?'🍗':'점'}</div><div class="tiny">${i+1}위</div></div>`;}).join('')}</div>` : '';
   const myIdx = ps.findIndex(x=>x.id===S.uid);
   const shown = ps.slice(0,30);
-  $('#rankList').innerHTML = podium + shown.map((x,i)=>rankRow(x,i)).join('') + (myIdx>=30 ? `<div class="tiny" style="text-align:center">⋯</div>${rankRow(ps[myIdx], myIdx)}` : '');
+  $('#rankList').innerHTML = (chick ? '<p class="tiny" style="margin-bottom:8px">하루 권장 칼로리를 ±10% 안으로 지키면 닭가슴살 10개를 받아요.</p>' : '') + podium + shown.map((x,i)=>rankRow(x,i,chick)).join('') + (myIdx>=30 ? `<div class="tiny" style="text-align:center">⋯</div>${rankRow(ps[myIdx], myIdx, chick)}` : '');
 }
-function rankRow(x, i){
+function rankRow(x, i, chick){
   const st = streakOf(x.p);
+  if(chick) return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${esc(CHANNELS[x.p.channel]?.name||'')}${x.p.chickenDays?.[todayKey()]?' · 오늘 +10🍗':''}</span></span><span class="pts">${x.v.toLocaleString()}🍗</span></div>`;
   return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${st?`${st}일 연속 기록 · `:''}오늘 ${x.p.today?.date===todayKey()?x.p.today.pts:0}점</span></span><span class="pts">${x.v}</span></div>`;
 }
 function postHtml(p){
@@ -1313,7 +1345,7 @@ function renderPeople(){
       <div class="list">${shown.map(([id,p]) => { const td = p.today?.date===todayKey() ? p.today : null, ch = CHANNELS[p.channel];
         return `<div class="li"><span class="av sm">${esc(p.avatar||'🐰')}</span><div class="main"><div class="nm">${esc(p.nick)} ${p.channel===S.me.channel?'<span class="tag">같은 채널</span>':''}</div>
           <div class="sub">${ch?esc(ch.name):''}${td?` · 오늘 ${td.pts}점 · ${td.kcal}kcal`:' · 오늘 기록 전'}${streakOf(p)?` · ${streakOf(p)}일 연속`:''}</div></div>
-          <button class="btn sm plain" data-act="cheer" data-id="${esc(id)}" data-e="👏" aria-label="${esc(p.nick)} 응원하기">👏</button>
+          <button class="btn sm plain" data-act="gift" data-id="${esc(id)}" aria-label="${esc(p.nick)}에게 덤벨 선물">🎁</button>
           <button class="btn sm" data-act="add-friend" data-id="${esc(id)}">친구 추가</button></div>`; }).join('')}</div>
       ${list.length > shown.length ? `<button class="btn plain sm" data-act="people-more" style="margin-top:8px">${list.length - shown.length}명 더 보기</button>` : ''}`}`;
 }
@@ -1325,7 +1357,7 @@ function friendCard(id){
     <div class="fr-top"><span class="av">${esc(f.avatar)}</span><div class="who"><b>${esc(f.nick)}</b><div class="tiny">${ch?ch.name:''} · ${streakOf(f)}일 연속 · 이번 주 ${fw}점</div></div>
       <button class="x-btn" data-act="unfriend" data-id="${esc(id)}" aria-label="친구 끊기">✕</button></div>
     <div class="mini-stats"><div><b>${td?td.kcal:0}</b>kcal</div><div><b>${td?td.p:0}g</b>단백질</div><div><b>${td?td.min:0}분</b>운동</div><div><b>${td?td.pts:0}</b>오늘 점수</div></div>
-    <div class="cheer-row">${CHEERS.map(([e,l])=>`<button data-act="cheer" data-id="${esc(id)}" data-e="${e}">${e} ${l}</button>`).join('')}<button data-act="vs" data-id="${esc(id)}" aria-expanded="${!!vs}" style="margin-left:auto;background:var(--accent-soft);border-color:var(--accent-soft);color:var(--accent-ink)">대결</button></div>
+    <div class="cheer-row">${CHEERS.map(([e,l])=>`<button data-act="cheer" data-id="${esc(id)}" data-e="${e}">${e} ${l}</button>`).join('')}<button class="gift-btn" data-act="gift" data-id="${esc(id)}">🎁 덤벨 선물</button><button data-act="vs" data-id="${esc(id)}" aria-expanded="${!!vs}" style="margin-left:auto;background:var(--accent-soft);border-color:var(--accent-soft);color:var(--accent-ink)">대결</button></div>
     ${vs?`<div class="stack" style="gap:8px;padding-top:4px">
       <div class="vs"><div class="side"><span class="tiny">나</span><b style="color:var(--accent-ink)">${mw}</b></div><div class="mid">VS</div><div class="side"><span class="tiny">${esc(f.nick)}</span><b style="color:var(--prot)">${fw}</b></div></div>
       <div class="vsbar"><i style="width:${mw/tot*100}%;background:var(--accent)"></i><i style="width:${fw/tot*100}%;background:var(--prot)"></i></div>
@@ -1344,7 +1376,7 @@ function renderCheers(){
   dot.hidden = !unseen || (S.tab==='together' && S.seg.tog==='friends'); dot.textContent = unseen;
   if(!S.cheers.length){ box.hidden = true; return; }
   box.hidden = false;
-  box.innerHTML = `<div class="card-h"><h2>받은 응원</h2><span class="tiny">최근 ${S.cheers.length}개</span></div><div class="list">${S.cheers.slice(0,8).map(c=>{const u=S.profiles[c.from]||{nick:'친구',avatar:'🐣'}; return `<div class="li"><span class="av sm">${esc(u.avatar)}</span><div class="main"><b>${esc(u.nick)}</b> <span class="small">님이 ${esc(c.emoji)} ${esc((CHEERS.find(x=>x[0]===c.emoji)||[,'응원'])[1])}!</span></div><span class="tiny">${timeAgo(c.at)}</span></div>`;}).join('')}</div>`;
+  box.innerHTML = `<div class="card-h"><h2>받은 응원</h2><span class="tiny">최근 ${S.cheers.length}개</span></div><div class="list">${S.cheers.slice(0,8).map(c=>{const u=S.profiles[c.from]||{nick:'친구',avatar:'🐣'}; return `<div class="li"><span class="av sm">${esc(u.avatar)}</span><div class="main"><b>${esc(u.nick)}</b> <span class="small">님이 ${c.amount?`덤벨 <b>${c.amount}개</b>와 `:''}${esc(c.emoji)} ${esc((CHEERS.find(x=>x[0]===c.emoji)||[,'응원'])[1])}!</span></div><span class="tiny">${timeAgo(c.at)}</span></div>`;}).join('')}</div>`;
   if(S.tab==='together' && S.seg.tog==='friends' && S.cheers[0] && S.cheers[0].at > seen) LS.set('seenCheers:'+S.uid, S.cheers[0].at);
 }
 function myChallengeValue(c){
@@ -1406,6 +1438,7 @@ function renderMe(){
   const p = S.me, T = targetsFor(p), ch = CHANNELS[p.channel];
   $('#meCard').innerHTML = `<div class="fr-top"><span class="av" style="width:56px;height:56px;font-size:1.9rem">${esc(p.avatar)}</span><div class="who"><h2>${esc(p.nick)}</h2><span class="small muted">${ch.group} · ${ch.name} · ${p.sex==='f'?'여':'남'} ${p.age}세 · ${p.height}cm · ${p.weight}kg${p.targetWeight?` → ${p.targetWeight}kg`:''}</span></div></div>
     <div class="mini-stats" style="margin-top:12px"><div><b>${totalPts(p)}</b>누적 점수</div><div><b>${weekPts(p)}</b>이번 주</div><div><b>${streakOf(p)}일</b>연속 기록</div><div><b>${(p.badges||[]).length}</b>배지</div></div>
+    <div class="mini-stats" style="margin-top:6px;grid-template-columns:repeat(3,1fr)"><div><b>${(+p.chicken||0).toLocaleString()}</b>🍗 닭가슴살</div><div><b>${S.wallet?(+S.wallet.dumbbells).toLocaleString():'–'}</b>덤벨</div><div><b>${S.wallet?(+S.wallet.received).toLocaleString():'–'}</b>받은 덤벨</div></div>
     <button class="btn block ghost" style="margin-top:12px" data-act="edit-profile" data-step="me">프로필·목표 수정</button>`;
   $('#targetBox').innerHTML = `<div class="mini-stats"><div><b>${T.kcal}</b>kcal</div><div><b style="color:var(--carb)">${T.c}g</b>탄수화물</div><div><b style="color:var(--prot)">${T.p}g</b>단백질</div><div><b style="color:var(--fat)">${T.f}g</b>지방</div></div>
     <p class="tiny" style="margin-top:8px">기초대사량 ${T.bmr} kcal · 생활 소모 ${T.tdee} kcal · ${ch.name} 기준 ${ch.kcal>0?'+':''}${ch.kcal} kcal${ch.keto?` · 탄수 ${ch.carbG}g 고정`:''} · 단백질 체중×${ch.p}g</p>`;
@@ -1487,7 +1520,11 @@ function saveOnboarding(e){
   if(!old.weightDate) p.weightDate = todayKey();
   store.saveProfile(p);
   $('#obSheet').hidden = true;
-  toast(old.nick ? '프로필을 저장했어요' : `${CHANNELS[p.channel].name} 채널에 들어왔어요!`);
+  const goalChanged = old.nick && old.channel !== p.channel;
+  // Re-score today with the new targets so points and 🍗 follow the new goal right away.
+  if(old.nick && S.days[todayKey()]) commitDay(structuredClone(S.days[todayKey()]));
+  if(goalChanged) S.viewChan = null;
+  toast(!old.nick ? `${CHANNELS[p.channel].name} 채널에 들어왔어요!` : goalChanged ? `목표를 ${CHANNELS[p.channel].name}(으)로 바꿨어요. 하루 목표 ${targetsFor(p).kcal}kcal` : '프로필을 저장했어요');
   renderAll();
 }
 
@@ -1738,7 +1775,7 @@ async function sendPost(e){
   e.preventDefault();
   const txt = $('#postText').value.trim(); if(!txt) return;
   const t = dayTotals(S.days[todayKey()]);
-  const doc = {channel:S.me.channel, user_id:S.uid, text:txt.slice(0,1000), created_at:Date.now(), attach: $('#postAttach').checked ? {kcal:r0(t.kcal), c:r0(t.c), p:r0(t.p), f:r0(t.f), burn:r0(t.burn)} : null};
+  const doc = {channel:S.viewChan || S.me.channel, user_id:S.uid, text:txt.slice(0,1000), created_at:Date.now(), attach: $('#postAttach').checked ? {kcal:r0(t.kcal), c:r0(t.c), p:r0(t.p), f:r0(t.f), burn:r0(t.burn)} : null};
   $('#postText').value = ''; $('#postAttach').checked = false;
   social('post', () => must(sb.from('posts').insert(doc)), '글을 올렸어요');
 }
@@ -1950,6 +1987,63 @@ function renderSoundBox(){
   const hb = $('#musicBtn'); if(hb){ hb.textContent = c.music ? '♪' : '♪̸'; hb.setAttribute('aria-pressed', c.music); hb.setAttribute('aria-label', c.music ? '배경음악 끄기' : '배경음악 켜기'); }
 }
 
+/* ---------- Rewards: 🍗 chicken breasts and dumbbells ---------- */
+const DUMB = (sz=26) => `<svg width="${sz}" height="${sz}" viewBox="0 0 100 60" aria-hidden="true"><rect x="22" y="26" width="56" height="8" rx="4" fill="#5B5266"/><rect x="8" y="12" width="16" height="36" rx="6" fill="#FF5C8D"/><rect x="76" y="12" width="16" height="36" rx="6" fill="#FF5C8D"/><rect x="1" y="19" width="9" height="22" rx="3" fill="#D63A6C"/><rect x="90" y="19" width="9" height="22" rx="3" fill="#D63A6C"/></svg>`;
+async function claimGift(){
+  try {
+    const r = await sb.rpc('claim_daily_gift'); if(r.error) throw r.error;
+    S.wallet = r.data;
+    if(r.data.gifted) setTimeout(() => { toast('🎁 오늘의 출석 선물! 덤벨 50개를 받았어요'); Snd.cheer(); }, 900);
+  } catch(e){ S.wallet = null; S.walletErr = String(e?.message||e); console.warn('wallet not ready', e); }
+  if(S.me){ renderReward(); renderMe(); }
+}
+function renderReward(){
+  const box = $('#rewardCard'); if(!box || !S.me) return;
+  const T = targetsFor(S.me), t = dayTotals(S.days[todayKey()]), hit = !!S.me.chickenDays?.[todayKey()];
+  const left = T.kcal - t.kcal;
+  const status = hit ? '오늘 닭가슴살 10개 획득! 이대로 유지해요'
+    : !t.meals ? `오늘 ${r0(T.kcal*0.9)}~${r0(T.kcal*1.1)}kcal 먹으면 🍗 10개`
+    : left > 0 ? `${r0(left - T.kcal*0.1)}kcal 더 먹으면 🍗 10개` : `목표보다 ${r0(-left - T.kcal*0.1)}kcal 초과했어요`;
+  box.innerHTML = `<div class="card-h" style="margin-bottom:10px"><h2>내 보상</h2><button class="btn sm ghost" data-act="go-chicken-rank">🍗 랭킹</button></div>
+    <div class="reward">
+      <div class="rw ch"><span class="ic">🍗</span><div style="min-width:0"><b>${(+S.me.chicken||0).toLocaleString()}</b><small>닭가슴살</small></div></div>
+      <div class="rw db"><span class="ic">${DUMB(32)}</span><div style="min-width:0"><b>${S.wallet ? (+S.wallet.dumbbells).toLocaleString() : '–'}</b><small>덤벨</small></div></div>
+    </div>
+    <p class="small" style="margin-top:10px">${hit?'✅':'🎯'} ${status}</p>
+    <p class="tiny">${S.wallet ? '매일 접속하면 덤벨 50개를 선물로 받아요. 친구에게 응원과 함께 나눠 보세요!' : '덤벨 기능은 관리자가 서버 설정(supabase-rewards.sql)을 마치면 켜져요.'}</p>`;
+}
+function openGift(id){
+  const p = S.profiles[id]; if(!p) return;
+  if(!S.wallet){ toast('덤벨 기능이 아직 준비 중이에요'); return; }
+  S.gift.to = id; drawGift(); $('#giftSheet').hidden = false;
+}
+function drawGift(){
+  const p = S.profiles[S.gift.to], bal = +S.wallet?.dumbbells || 0;
+  $('#giftBody').innerHTML = `
+    <div class="fr-top"><span class="av">${esc(p.avatar||'🐰')}</span><div class="who"><b>${esc(p.nick)}</b> 님에게<div class="tiny">내 덤벨 ${bal.toLocaleString()}개</div></div>${DUMB(40)}</div>
+    <div><div class="section-label" style="margin-bottom:6px">몇 개 보낼까요?</div>
+      <div class="chips">${[1,5,10,30,50].map(n=>`<button class="chip" data-act="gift-amt" data-v="${n}" aria-pressed="${S.gift.amount===n}" ${n>bal?'disabled':''}>${n}개</button>`).join('')}</div></div>
+    <div><div class="section-label" style="margin-bottom:6px">응원 한마디</div>
+      <div class="chips">${CHEERS.map(([e,l])=>`<button class="chip" data-act="gift-emoji" data-v="${e}" aria-pressed="${S.gift.emoji===e}">${e} ${l}</button>`).join('')}</div></div>
+    <button class="btn block" data-act="gift-send" ${S.gift.amount>bal?'disabled':''}>덤벨 ${S.gift.amount}개 보내기</button>
+    ${bal < 1 ? '<p class="tiny">덤벨이 없어요. 내일 접속하면 50개를 받아요!</p>' : ''}`;
+}
+async function sendGift(){
+  const id = S.gift.to, amt = S.gift.amount, p = S.profiles[id];
+  const btn = $('[data-act="gift-send"]'); if(btn) btn.disabled = true;
+  try {
+    const r = await sb.rpc('send_dumbbells', {to_id:id, amount:amt, emoji:S.gift.emoji}); if(r.error) throw r.error;
+    S.wallet = {...S.wallet, ...r.data};
+    $('#giftSheet').hidden = true; Snd.cheer();
+    toast(`${p?.nick} 님에게 덤벨 ${amt}개와 ${S.gift.emoji} 응원을 보냈어요!`);
+    renderReward(); loadSocial();
+  } catch(e){
+    const m = String(e?.message||'');
+    toast(/not_enough/.test(m) ? '덤벨이 부족해요' : /self_gift/.test(m) ? '나에게는 보낼 수 없어요' : '보내지 못했어요. 잠시 뒤 다시 해 주세요');
+    if(btn) btn.disabled = false;
+  }
+}
+
 /* ---------- Login ---------- */
 S.authMode = 'login';
 function drawAuth(){
@@ -2044,6 +2138,13 @@ document.addEventListener('click', async e => {
     case 'cmts': S.openCmts[id] = !S.openCmts[id]; renderChan(); break;
     case 'del-post': confirmDo('글을 삭제할까요?', '삭제한 글과 댓글은 되돌릴 수 없어요.', () => social('post:'+id, () => must(sb.from('posts').delete().eq('id', id)), '글을 삭제했어요')); break;
     case 'copy-code': { const c = S.me.code; try { await navigator.clipboard.writeText(c); toast('코드를 복사했어요'); } catch { const r = document.createRange(); r.selectNodeContents($('#myCode')); getSelection().removeAllRanges(); getSelection().addRange(r); toast('코드를 선택했어요. 복사해서 보내 주세요'); } break; }
+    case 'gift': openGift(id); break;
+    case 'gift-amt': S.gift.amount = +b.dataset.v; drawGift(); break;
+    case 'gift-emoji': S.gift.emoji = b.dataset.v; drawGift(); break;
+    case 'gift-send': sendGift(); break;
+    case 'go-chicken-rank': setTab('chan'); setSeg('chan','rank'); setSeg('rank','chicken'); break;
+    case 'change-goal': openOnboarding(false, 'goal'); break;
+    case 'view-chan': S.viewChan = b.dataset.v; renderChan(); break;
     case 'add-all-friends': { const l = {...S.friends}; let n = 0; for(const id of Object.keys(S.profiles)) if(id!==S.uid && S.profiles[id]?.nick && !l[id]){ l[id] = true; n++; } store.saveFriends(l); toast(`${n}명과 친구가 됐어요!`); renderTogether(); break; }
     case 'people-more': S.peopleAll = true; renderPeople(); break;
     case 'add-friend': { const l = {...S.friends, [id]:true}; store.saveFriends(l); toast(`${S.profiles[id]?.nick} 님을 친구로 추가했어요`); $('#friendSearch').innerHTML=''; $('#friendIn').value=''; renderTogether(); break; }
