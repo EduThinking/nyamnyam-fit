@@ -1822,6 +1822,18 @@ const Snd = {
     this.musicGain.connect(lp); lp.connect(this.master); this.master.connect(this.ctx.destination);
     return this.ctx;
   },
+  // Phones start audio suspended; wait until it is running, otherwise short sounds end before they are heard.
+  async ready(){
+    if(!this.init()) return false;
+    if(this.ctx.state !== 'running'){ try { await this.ctx.resume(); } catch {} }
+    return this.ctx.state === 'running';
+  },
+  unlocked:false,
+  unlock(){
+    if(this.unlocked || !this.init()) return;
+    try { const s = this.ctx.createBufferSource(); s.buffer = this.ctx.createBuffer(1, 1, 22050); s.connect(this.ctx.destination); s.start(0); } catch {}
+    this.ctx.resume().then(() => { this.unlocked = this.ctx.state === 'running'; }).catch(() => {});
+  },
   hz: m => 440 * Math.pow(2, (m - 69) / 12),
   tone(t, midi, dur, type, gain, dest){
     const o = this.ctx.createOscillator(), g = this.ctx.createGain();
@@ -1859,10 +1871,10 @@ const Snd = {
       this.nextT += e; this.step++;
     }
   },
-  startMusic(){
-    if(!this.cfg.music || this.playing || document.hidden) return;
-    if(!this.init()) return;
-    this.ctx.resume();
+  async startMusic(){
+    if(!this.cfg.music || this.playing || this.starting || document.hidden) return;
+    this.starting = true; const ok = await this.ready(); this.starting = false;
+    if(!ok || this.playing || !this.cfg.music) return;
     this.playing = true; this.nextT = this.ctx.currentTime + 0.1;
     this.musicGain.gain.cancelScheduledValues(this.ctx.currentTime);
     this.musicGain.gain.setValueAtTime(0, this.ctx.currentTime); this.musicGain.gain.linearRampToValueAtTime(this.cfg.vol * 0.5, this.ctx.currentTime + 1.5);
@@ -1870,33 +1882,40 @@ const Snd = {
   },
   stopMusic(){ if(!this.playing) return; clearInterval(this.timer); this.playing = false; },
   setVol(v){ this.cfg.vol = v; this.save(); if(this.musicGain) this.musicGain.gain.setTargetAtTime(v * 0.5, this.ctx.currentTime, 0.05); },
-  pop(){
-    if(!this.init()) return; this.ctx.resume();
-    const t = this.ctx.currentTime, g = this.ctx.createGain(); g.gain.value = this.cfg.sfxVol * 0.5; g.connect(this.master);
+  async pop(){
+    if(!(await this.ready())) return;
+    const t = this.ctx.currentTime + 0.01, g = this.ctx.createGain(); g.gain.value = this.cfg.sfxVol * 0.5; g.connect(this.master);
     const o = this.ctx.createOscillator(), og = this.ctx.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(620, t); o.frequency.exponentialRampToValueAtTime(1250, t + 0.07);
     og.gain.setValueAtTime(0.6, t); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
     o.connect(og); og.connect(g); o.start(t); o.stop(t + 0.13);
   },
-  lastVoice:0,
-  voice(text = '득근! 득근!'){
-    const now = Date.now(); if(now - this.lastVoice < 700) return this.pop(); this.lastVoice = now;
-    const ss = window.speechSynthesis;
-    if(!ss || !window.SpeechSynthesisUtterance){ this.pop(); return; }
+  lastVoice:0, clips:{},
+  // Pre-made voice clips play through Web Audio, so they work even where the phone's text-to-speech is off.
+  async clip(name){
+    if(this.clips[name]) return this.clips[name];
+    const r = await fetch('/sfx/'+name+'.wav'); const ab = await r.arrayBuffer();
+    this.clips[name] = await new Promise((res, rej) => this.ctx.decodeAudioData(ab, res, rej));
+    return this.clips[name];
+  },
+  async voice(name = 'dukgeun'){
+    const now = Date.now(); if(now - this.lastVoice < 600) return; this.lastVoice = now;
     try {
-      ss.cancel();
-      const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.pitch = 1.8; u.rate = 1.35; u.volume = this.cfg.sfxVol;
-      const ko = ss.getVoices().find(v => /ko/i.test(v.lang)); if(ko) u.voice = ko;
-      ss.speak(u);
-    } catch { this.pop(); }
+      if(!(await this.ready())) return;
+      const buf = await this.clip(name);
+      const src = this.ctx.createBufferSource(), g = this.ctx.createGain();
+      g.gain.value = Math.min(1.4, this.cfg.sfxVol * 1.6);
+      src.buffer = buf; src.connect(g); g.connect(this.master); src.start();
+    } catch(e){ console.warn('voice clip', e); this.pop(); }
   },
   tap(){ if(this.cfg.sfx === 'pop') this.pop(); else if(this.cfg.sfx === 'voice') this.voice(); },
   // Celebrations (saving a record) always use the cheer when effects are on.
-  cheer(){ if(this.cfg.sfx === 'off') return; this.cfg.sfx === 'voice' ? this.voice('득근! 득근! 잘했어요!') : this.pop(); },
+  cheer(){ if(this.cfg.sfx === 'off') return; if(this.cfg.sfx === 'voice'){ this.lastVoice = 0; this.voice('dukgeun-praise'); } else this.pop(); },
 };
 document.addEventListener('visibilitychange', () => { if(document.hidden) Snd.stopMusic(); else if(Snd.ctx && Snd.cfg.music) Snd.startMusic(); });
 // Browsers allow sound only after the first touch.
-document.addEventListener('pointerdown', () => { if(Snd.cfg.music) Snd.startMusic(); }, {capture:true});
+document.addEventListener('pointerdown', () => { Snd.unlock(); if(Snd.cfg.music) Snd.startMusic(); }, {capture:true});
+document.addEventListener('touchend', () => Snd.unlock(), {capture:true, passive:true});
 function renderSoundBox(){
   const c = Snd.cfg, box = $('#soundBox'); if(!box) return;
   box.innerHTML = `
@@ -1906,7 +1925,7 @@ function renderSoundBox(){
     <div><div class="nm" style="font-weight:700;margin-bottom:6px">누를 때 효과음</div>
       <div class="chips">${[['off','끄기'],['pop','뿅!'],['voice','득근! 득근!']].map(([v,l])=>`<button class="chip" data-act="snd-sfx" data-v="${v}" aria-pressed="${c.sfx===v}">${l}</button>`).join('')}</div></div>
     <label class="f" style="font-size:.85rem">효과음 크기<input type="range" id="sndSfxVol" min="0" max="1" step="0.05" value="${c.sfxVol}" ${c.sfx==='off'?'disabled':''} style="accent-color:var(--accent)"></label>
-    <p class="tiny">"득근! 득근!"은 휴대폰의 음성 읽기 기능으로 말해요. 기기에 따라 목소리가 달라요. 무음 모드에서는 소리가 나지 않을 수 있어요.</p>`;
+    <p class="tiny">소리가 안 나면 휴대폰의 <b>미디어 음량</b>을 올려 주세요. 무음·진동 모드에서는 소리가 작거나 나지 않을 수 있어요.</p>`;
   const hb = $('#musicBtn'); if(hb){ hb.textContent = c.music ? '♪' : '♪̸'; hb.setAttribute('aria-pressed', c.music); hb.setAttribute('aria-label', c.music ? '배경음악 끄기' : '배경음악 켜기'); }
 }
 
@@ -1951,12 +1970,13 @@ function toast(m){ const t = $('#toast'); t.textContent = m; t.hidden = false; c
 
 /* ---------- Events ---------- */
 document.addEventListener('click', async e => {
+  const anyBtn = e.target.closest('button, .chip, label.drop');
+  if(anyBtn && !String(anyBtn.dataset.act||'').startsWith('snd-') && anyBtn.dataset.act!=='voice') Snd.tap();
   const tabB = e.target.closest('[data-tab]'); if(tabB){ setTab(tabB.dataset.tab); return; }
   const segB = e.target.closest('[data-seg]'); if(segB){ setSeg(segB.dataset.seg, segB.dataset.v); return; }
   if(e.target.classList.contains('overlay') && e.target.id!=='obSheet' && e.target.id!=='authSheet'){ e.target.hidden = true; return; }
   const b = e.target.closest('[data-act]'); if(!b) return;
   const a = b.dataset.act, id = b.dataset.id;
-  if(!a.startsWith('snd-') && a!=='voice') Snd.tap();
   if(b.tagName==='A') e.preventDefault();
   switch(a){
     case 'day-prev': S.date = addDays(S.date,-1); renderAll(); break;
