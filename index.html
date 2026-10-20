@@ -474,6 +474,7 @@ textarea.input{min-height:96px;resize:vertical}
         <div id="friendSearch" style="margin-top:10px"></div>
       </section>
       <div id="friendList" class="stack"></div>
+      <section class="card" id="peopleBox"></section>
     </div>
     <div id="togChal" class="stack" hidden>
       <button class="btn block" data-act="open-chal">+ 새 챌린지 만들기</button>
@@ -1292,9 +1293,29 @@ function renderTogether(){
   const social = !!S.uid;
   if(!social){ $('#friendList').innerHTML = `<div class="note">친구와 챌린지는 claude.ai에 로그인해서 열면 쓸 수 있어요.</div>`; $('#chalList').innerHTML = $('#friendList').innerHTML; return; }
   const ids = Object.keys(S.friends).filter(id => S.friends[id] && S.profiles[id]);
-  $('#friendList').innerHTML = ids.length ? ids.map(friendCard).join('') : `<div class="card">${emptyArt('아직 친구가 없어요','내 코드를 친구에게 보내거나, 친구 코드·닉네임으로 찾아보세요')}</div>`;
+  $('#friendList').innerHTML = ids.length ? ids.map(friendCard).join('') : `<div class="card">${emptyArt('아직 친구가 없어요','아래 "냠냠핏 사람들"에서 바로 친구로 추가해 보세요')}</div>`;
+  renderPeople();
   renderChallenges();
   renderCheers();
+}
+/* Everyone who has joined shows up here automatically. */
+function renderPeople(){
+  const box = $('#peopleBox'); if(!box) return;
+  const others = Object.entries(S.profiles).filter(([id,p]) => id!==S.uid && p?.nick);
+  const notFriends = others.filter(([id]) => !S.friends[id]);
+  const active = p => Math.max(+p.updatedAt||0, +p.createdAt||0);
+  const list = notFriends.sort((a,b) => (b[1].channel===S.me.channel) - (a[1].channel===S.me.channel) || active(b[1]) - active(a[1]));
+  const shown = S.peopleAll ? list : list.slice(0, 20);
+  box.innerHTML = `<div class="card-h"><h2>냠냠핏 사람들</h2><span class="tiny">가입한 사람 ${others.length}명</span></div>
+    ${!others.length ? `<p class="small muted">아직 다른 사람이 없어요. 링크를 친구에게 보내 보세요!</p>`
+    : !list.length ? `<p class="small muted">가입한 사람 모두와 친구예요 🎉</p>`
+    : `<button class="btn ghost block" data-act="add-all-friends" style="margin-bottom:6px">${list.length}명 모두 친구 추가</button>
+      <div class="list">${shown.map(([id,p]) => { const td = p.today?.date===todayKey() ? p.today : null, ch = CHANNELS[p.channel];
+        return `<div class="li"><span class="av sm">${esc(p.avatar||'🐰')}</span><div class="main"><div class="nm">${esc(p.nick)} ${p.channel===S.me.channel?'<span class="tag">같은 채널</span>':''}</div>
+          <div class="sub">${ch?esc(ch.name):''}${td?` · 오늘 ${td.pts}점 · ${td.kcal}kcal`:' · 오늘 기록 전'}${streakOf(p)?` · ${streakOf(p)}일 연속`:''}</div></div>
+          <button class="btn sm plain" data-act="cheer" data-id="${esc(id)}" data-e="👏" aria-label="${esc(p.nick)} 응원하기">👏</button>
+          <button class="btn sm" data-act="add-friend" data-id="${esc(id)}">친구 추가</button></div>`; }).join('')}</div>
+      ${list.length > shown.length ? `<button class="btn plain sm" data-act="people-more" style="margin-top:8px">${list.length - shown.length}명 더 보기</button>` : ''}`}`;
 }
 function friendCard(id){
   const f = S.profiles[id], td = f.today?.date===todayKey() ? f.today : null, ch = CHANNELS[f.channel];
@@ -2023,6 +2044,8 @@ document.addEventListener('click', async e => {
     case 'cmts': S.openCmts[id] = !S.openCmts[id]; renderChan(); break;
     case 'del-post': confirmDo('글을 삭제할까요?', '삭제한 글과 댓글은 되돌릴 수 없어요.', () => social('post:'+id, () => must(sb.from('posts').delete().eq('id', id)), '글을 삭제했어요')); break;
     case 'copy-code': { const c = S.me.code; try { await navigator.clipboard.writeText(c); toast('코드를 복사했어요'); } catch { const r = document.createRange(); r.selectNodeContents($('#myCode')); getSelection().removeAllRanges(); getSelection().addRange(r); toast('코드를 선택했어요. 복사해서 보내 주세요'); } break; }
+    case 'add-all-friends': { const l = {...S.friends}; let n = 0; for(const id of Object.keys(S.profiles)) if(id!==S.uid && S.profiles[id]?.nick && !l[id]){ l[id] = true; n++; } store.saveFriends(l); toast(`${n}명과 친구가 됐어요!`); renderTogether(); break; }
+    case 'people-more': S.peopleAll = true; renderPeople(); break;
     case 'add-friend': { const l = {...S.friends, [id]:true}; store.saveFriends(l); toast(`${S.profiles[id]?.nick} 님을 친구로 추가했어요`); $('#friendSearch').innerHTML=''; $('#friendIn').value=''; renderTogether(); break; }
     case 'unfriend': confirmDo('친구를 끊을까요?', `${S.profiles[id]?.nick||''} 님이 친구 목록에서 사라져요.`, () => { const l = {...S.friends}; delete l[id]; store.saveFriends(l); renderTogether(); }, '친구 끊기'); break;
     case 'cheer': social('cheer', () => must(sb.from('cheers').insert({from_id:S.uid, to_id:id, emoji:b.dataset.e, at:Date.now()})), `${S.profiles[id]?.nick} 님에게 ${b.dataset.e} 응원을 보냈어요`); break;
