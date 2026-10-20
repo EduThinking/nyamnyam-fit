@@ -352,6 +352,15 @@ textarea.input{min-height:96px;resize:vertical}
 .thumb button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(42,34,51,.7);color:#fff;font-size:.75rem;line-height:22px;padding:0}
 .lightbox{position:fixed;inset:0;z-index:70;background:rgba(20,16,24,.92);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px max(16px,env(safe-area-inset-bottom,0px))}
 .lightbox img{max-width:100%;max-height:100%;border-radius:12px}
+.adm-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.adm-stats div{background:#fff;border:1.5px solid var(--line);border-radius:var(--r-md);padding:12px}
+.adm-stats b{display:block;font-family:var(--f-display);font-weight:400;font-size:1.7rem;line-height:1.1}
+.adm-stats small{font-size:.78rem;font-weight:700;color:var(--ink2)}
+.adm-table{overflow-x:auto;border:1.5px solid var(--line);border-radius:var(--r-md);background:#fff}
+.adm-table table{border-collapse:collapse;width:100%;min-width:640px;font-size:.85rem}
+.adm-table th,.adm-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.adm-table th{background:var(--soft);font-size:.76rem;color:var(--ink2);cursor:pointer;position:sticky;top:0}
+.adm-table td.n{text-align:right;font-variant-numeric:tabular-nums}
 .toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-weight:600;font-size:.92rem;max-width:calc(100% - 32px);text-align:center}
 
 .banner{margin-bottom:12px}
@@ -527,6 +536,7 @@ textarea.input{min-height:96px;resize:vertical}
     </section>
     <section class="card">
       <div class="card-h"><h2>공지사항</h2><button class="btn sm ghost" data-act="notice-open">다시 보기</button></div>
+      <button class="btn block" data-act="admin-open" id="adminBtn" hidden style="margin-bottom:10px">📊 관리자 현황 보기</button>
       <p class="small muted">매주 닭가슴살 1등에게 메가커피 쿠폰을 드려요. 이름은 실명으로 바꿔 주세요!</p>
     </section>
     <section class="card">
@@ -754,6 +764,14 @@ textarea.input{min-height:96px;resize:vertical}
     <h2 id="cfTitle" style="margin-bottom:8px">정말 할까요?</h2>
     <p class="muted" id="cfBody" style="margin-bottom:16px"></p>
     <div class="grid2"><button class="btn plain" data-act="cf-no">취소</button><button class="btn" data-act="cf-yes" style="background:var(--bad);box-shadow:0 3px 0 #A52A2E">삭제</button></div>
+  </div>
+</div>
+
+<!-- Admin overview -->
+<div class="overlay full" id="adminSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <div class="sheet-h" style="margin-top:10px"><h2 id="adminTitle">관리자 현황</h2><div style="display:flex;gap:6px"><button class="btn sm ghost" data-act="admin-refresh">새로고침</button><button class="x-btn" data-act="close-sheet" aria-label="닫기">✕</button></div></div>
+    <div id="adminBody" class="stack"></div>
   </div>
 </div>
 
@@ -999,7 +1017,7 @@ async function boot(){
     $('#authSetup').hidden = false;
     return;
   }
-  S.aiOn = !!cfg.ai;
+  S.aiOn = !!cfg.ai; S.admins = cfg.admins || [];
   sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {auth:{persistSession:true, autoRefreshToken:true}});
   const { data } = await sb.auth.getSession();
   sb.auth.onAuthStateChange((ev, session) => {
@@ -1011,7 +1029,7 @@ async function boot(){
 }
 async function startSession(user){
   if(S.uid === user.id) return;
-  S.uid = user.id; S.email = user.email || '';
+  S.uid = user.id; S.email = user.email || ''; S.isAdmin = (S.admins||[]).includes(S.email.toLowerCase());
   $('#authSheet').hidden = true;
   setSave();
   S.dirty = LS.get('dirty:'+S.uid) || {};
@@ -1484,6 +1502,7 @@ function renderMe(){
   $('#routineBox').innerHTML = `<div class="week-rt">${[1,2,3,4,5,6,0].map(i=>{const r=p.routine?.[i]; return `<div class="${i===td?'today':''}"><b>${DOW[i]}</b>${r?.parts?.length?esc(r.parts.join(' ')):'–'}</div>`;}).join('')}</div>`;
   $('#badgeBox').innerHTML = (p.badges||[]).length ? `<div class="badges">${p.badges.map(b=>`<span>${esc(b.emoji)} ${esc(b.title)}</span>`).join('')}</div>` : `<p class="small muted">챌린지를 완료하면 배지를 받아요.</p>`;
   renderDataBox(); renderSoundBox();
+  $('#adminBtn').hidden = !S.isAdmin;
 }
 function renderDataBox(){
   if(!S.me) return;
@@ -2163,6 +2182,44 @@ function showNotice(force){
   $('#noticeSheet').hidden = false;
 }
 
+/* ---------- Admin overview (button shows only for ADMIN_EMAILS accounts; it reads the same data every signed-in user can read) ---------- */
+S.admSort = 'active';
+function renderAdmin(){
+  const today = todayKey(), mon = mondayOf(today), weekKeys = Array.from({length:7}, (_,i) => addDays(mon, i));
+  const users = Object.entries(S.profiles).filter(([,p]) => p?.nick).map(([id,p]) => ({id, p,
+    joined: +p.createdAt || 0, active: Math.max(+p.updatedAt||0, +p.createdAt||0),
+    todayRec: p.today?.date===today, weekActive: weekKeys.some(k => +p.dayPts?.[k] > 0),
+    week: weekPts(p), wch: weekChicken(p), streak: streakOf(p)}));
+  const n = users.length, todayN = users.filter(u => u.todayRec).length, weekN = users.filter(u => u.weekActive).length;
+  const newWeek = users.filter(u => u.joined >= parseKey(mon).getTime()).length;
+  const postsToday = S.posts.filter(x => keyOf(new Date(x.createdAt))===today).length;
+  const days7 = Array.from({length:7}, (_,i) => addDays(today, i-6));
+  const joins = days7.map(k => users.filter(u => u.joined && keyOf(new Date(u.joined))===k).length), maxJ = Math.max(1, ...joins);
+  const top = [...users].sort((a,b) => b.wch - a.wch)[0];
+  const sorters = {active:(a,b)=>b.active-a.active, joined:(a,b)=>b.joined-a.joined, week:(a,b)=>b.week-a.week, wch:(a,b)=>b.wch-a.wch, streak:(a,b)=>b.streak-a.streak, name:(a,b)=>a.p.nick.localeCompare(b.p.nick,'ko')};
+  const list = [...users].sort(sorters[S.admSort] || sorters.active);
+  const fmt = t => t ? `${shortDate(keyOf(new Date(t)))} ${String(new Date(t).getHours()).padStart(2,'0')}:${String(new Date(t).getMinutes()).padStart(2,'0')}` : '–';
+  const th = (k, l) => `<th data-act="admin-sort" data-v="${k}" aria-sort="${S.admSort===k?'descending':'none'}">${l}${S.admSort===k?' ▾':''}</th>`;
+  $('#adminBody').innerHTML = `
+    <div class="adm-stats">
+      <div><b>${n}</b><small>전체 가입자</small></div>
+      <div><b>${todayN}</b><small>오늘 기록한 사람</small></div>
+      <div><b>${weekN}</b><small>이번 주 활동한 사람</small></div>
+      <div><b>${newWeek}</b><small>이번 주 새 가입</small></div>
+      <div><b>${S.posts.length}</b><small>커뮤니티 글 (오늘 ${postsToday})</small></div>
+      <div><b>${S.challenges.length}</b><small>챌린지</small></div>
+    </div>
+    ${top && top.wch > 0 ? `<div class="note pink">☕ <b>이번 주 🍗 1등: ${esc(top.p.nick)}</b> (${top.wch}개) · 메가커피 쿠폰 대상<br><span class="tiny">${shortDate(mon)}~${shortDate(addDays(mon,6))} 기준, 일요일 밤에 확정돼요</span></div>` : ''}
+    <div class="card"><h3 style="margin-bottom:8px">최근 7일 가입</h3>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:110px">${joins.map((j,i)=>`<div style="text-align:center;font-size:.75rem;color:var(--ink2)"><div class="num" style="color:var(--ink)">${j}</div><div style="height:${Math.round(j/maxJ*70)+2}px;background:var(--accent);border-radius:6px 6px 2px 2px;opacity:${j?1:.25}"></div>${DOW[dowOf(days7[i])]}</div>`).join('')}</div></div>
+    <div class="card"><h3 style="margin-bottom:8px">채널별 인원</h3>
+      ${Object.entries(CHANNELS).map(([k,c]) => { const m = users.filter(u => u.p.channel===k).length; return `<div class="mrow" style="margin-bottom:8px"><div class="top-l"><span class="name">${c.name}</span><span class="num">${m}명</span></div><div class="bar"><i style="width:${n?m/n*100:0}%;background:${c.color}"></i></div></div>`; }).join('')}</div>
+    <div><h3 style="margin-bottom:8px">사용자 목록 <span class="tiny">(제목을 누르면 정렬)</span></h3>
+      <div class="adm-table"><table><thead><tr>${th('name','이름')}<th>채널</th>${th('joined','가입')}${th('active','마지막 활동')}<th>오늘</th>${th('streak','연속')}${th('week','주간 점수')}${th('wch','주간 🍗')}<th>누적 🍗</th><th>체중</th></tr></thead>
+      <tbody>${list.map(u => `<tr><td><b>${esc(u.p.nick)}</b>${u.id===S.uid?' (나)':''}</td><td>${esc(CHANNELS[u.p.channel]?.name||'')}</td><td>${u.joined?shortDate(keyOf(new Date(u.joined))):'–'}</td><td>${fmt(u.active)}</td><td>${u.todayRec?`✅ ${u.p.today.kcal}kcal`:'–'}</td><td class="n">${u.streak}일</td><td class="n">${u.week}</td><td class="n">${u.wch}</td><td class="n">${+u.p.chicken||0}</td><td class="n">${u.p.weight||'–'}</td></tr>`).join('')}</tbody></table></div></div>
+    <p class="tiny">이메일·로그인 기록은 Supabase 대시보드 → Authentication → Users에서 볼 수 있어요. 식단 상세는 개인정보라 본인만 볼 수 있어요.</p>`;
+}
+
 /* ---------- Login ---------- */
 S.authMode = 'login';
 function drawAuth(){
@@ -2275,6 +2332,9 @@ document.addEventListener('click', async e => {
     case 'install-dismiss': LS.set('installDismiss', Date.now() + 7*86400000); renderInstall(); break;
     case 'notice-ok': LS.set('notice:'+S.uid, NOTICE.version); $('#noticeSheet').hidden = true; Snd.cheer(); break;
     case 'notice-open': showNotice(true); break;
+    case 'admin-open': renderAdmin(); $('#adminSheet').hidden = false; break;
+    case 'admin-refresh': loadSocial().then(renderAdmin); toast('새로 불러왔어요'); break;
+    case 'admin-sort': S.admSort = b.dataset.v; renderAdmin(); break;
     case 'add-all-friends': { const l = {...S.friends}; let n = 0; for(const id of Object.keys(S.profiles)) if(id!==S.uid && S.profiles[id]?.nick && !l[id]){ l[id] = true; n++; } store.saveFriends(l); toast(`${n}명과 친구가 됐어요!`); renderTogether(); break; }
     case 'people-more': S.peopleAll = true; renderPeople(); break;
     case 'add-friend': { const l = {...S.friends, [id]:true}; store.saveFriends(l); toast(`${S.profiles[id]?.nick} 님을 친구로 추가했어요`); $('#friendSearch').innerHTML=''; $('#friendIn').value=''; renderTogether(); break; }

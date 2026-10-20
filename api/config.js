@@ -10,5 +10,7 @@ export default function handler(req, res) {
     supabaseUrl: supabaseOrigin(),
     supabaseAnonKey: (process.env.SUPABASE_ANON_KEY || '').trim(),
     ai: Boolean(process.env.ANTHROPIC_API_KEY),
+    // Accounts that see the in-app admin overview, set in Vercel: ADMIN_EMAILS=a@x.com,b@y.com
+    admins: (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean),
   });
 }
