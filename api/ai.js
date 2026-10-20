@@ -1,13 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { supabaseOrigin } from './config.js';
 
 const client = new Anthropic(); // reads ANTHROPIC_API_KEY
 
 // Only signed-in users of this app may spend the API key.
 async function verifyUser(token) {
-  if (!token || !process.env.SUPABASE_URL) return null;
+  const base = supabaseOrigin();
+  if (!token || !base) return null;
   try {
-    const r = await fetch(`${process.env.SUPABASE_URL}/auth/v1/user`, {
-      headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
+    const r = await fetch(`${base}/auth/v1/user`, {
+      headers: { apikey: (process.env.SUPABASE_ANON_KEY || '').trim(), Authorization: `Bearer ${token}` },
     });
     if (!r.ok) return null;
     return await r.json();
