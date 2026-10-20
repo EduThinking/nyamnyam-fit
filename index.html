@@ -576,7 +576,7 @@ textarea.input{min-height:96px;resize:vertical}
       <div id="food-talk" class="stack" style="gap:10px">
         <textarea class="input" id="foodText" placeholder="예: 점심에 제육볶음 덮밥 한 그릇이랑 콜라 한 캔 먹었어"></textarea>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn ghost" data-act="voice" data-target="foodText" id="voiceBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>말로 입력</span></button>
+          <button class="btn ghost" data-act="voice" data-target="foodText" data-hint="voiceHint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>말로 입력</span></button>
           <button class="btn" data-act="ai-food" style="flex:1">AI로 영양 분석</button>
         </div>
         <p class="tiny" id="voiceHint">마이크 버튼이 안 되면 휴대폰 키보드의 마이크(받아쓰기)를 눌러 말해도 돼요.</p>
@@ -617,6 +617,17 @@ textarea.input{min-height:96px;resize:vertical}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="workTitle">
     <div class="grab"></div>
     <div class="sheet-h"><h2 id="workTitle">운동 기록</h2><button class="x-btn" data-act="close-sheet" aria-label="닫기">✕</button></div>
+    <div class="stack" style="gap:10px;margin-bottom:18px" id="wkAiBox">
+      <div class="section-label">말·글로 기록 (AI)</div>
+      <textarea class="input" id="wkText" style="min-height:76px" placeholder="예: 벤치프레스 60kg 5세트, 딥스 3세트 하고 러닝머신 30분 뛰었어"></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn ghost" data-act="voice" data-target="wkText" data-hint="wkHint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>말로 입력</span></button>
+        <button type="button" class="btn" data-act="ai-work" style="flex:1">AI로 운동 분석</button>
+      </div>
+      <p class="tiny" id="wkHint">한 번에 여러 운동을 적어도 돼요. 마이크가 안 되면 키보드의 마이크(받아쓰기)를 써 주세요.</p>
+      <div id="aiWorkOut" class="stack" style="gap:10px"></div>
+    </div>
+    <div class="section-label" style="margin-bottom:8px">직접 고르기</div>
     <form id="workForm" class="stack">
       <div><div class="section-label" style="margin-bottom:6px">근력 운동</div><div class="chips" id="wkStr"></div></div>
       <div><div class="section-label" style="margin-bottom:6px">유산소·기타</div><div class="chips" id="wkCar"></div></div>
@@ -1493,19 +1504,19 @@ async function compressImage(file){
   } catch { return file; }
 }
 let rec = null;
-function startVoice(targetId){
+function startVoice(targetId, btn, hintId){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const hint = $('#voiceHint'), btn = $('#voiceBtn');
+  const hint = $('#'+hintId), label = btn.querySelector('span');
   if(rec){ try { rec.stop(); } catch {} return; }
   if(!SR){ hint.innerHTML = '<b>이 브라우저는 음성 인식을 지원하지 않아요.</b> 입력칸을 누른 뒤 휴대폰 키보드의 마이크 버튼으로 말해 주세요.'; $('#'+targetId).focus(); return; }
   try {
     rec = new SR(); rec.lang = 'ko-KR'; rec.interimResults = true; rec.continuous = false;
     const ta = $('#'+targetId), base = ta.value ? ta.value.trim()+' ' : '';
-    rec.onresult = ev => { let s = ''; for(const r of ev.results) s += r[0].transcript; ta.value = base + s; };
-    rec.onerror = ev => { hint.innerHTML = ev.error==='not-allowed'||ev.error==='service-not-allowed' ? '<b>여기서는 마이크를 쓸 수 없어요.</b> 입력칸을 누르고 키보드의 마이크(받아쓰기) 버튼으로 말해 주세요.' : '잘 듣지 못했어요. 다시 눌러 말해 주세요.'; };
-    rec.onend = () => { rec = null; btn.querySelector('span').textContent = '말로 입력'; btn.classList.add('ghost'); };
-    rec.start(); btn.querySelector('span').textContent = '듣는 중… (누르면 멈춤)'; btn.classList.remove('ghost');
-    hint.textContent = '먹은 음식과 양을 말해 주세요. 예: "아침에 계란 두 개랑 바나나 하나"';
+    rec.onresult = ev => { let t = ''; for(const r of ev.results) t += r[0].transcript; ta.value = base + t; };
+    rec.onerror = ev => { hint.innerHTML = ev.error==='not-allowed'||ev.error==='service-not-allowed' ? '<b>마이크 권한이 꺼져 있어요.</b> 브라우저 설정에서 마이크를 허용하거나, 키보드의 마이크(받아쓰기) 버튼으로 말해 주세요.' : '잘 듣지 못했어요. 다시 눌러 말해 주세요.'; };
+    rec.onend = () => { rec = null; label.textContent = '말로 입력'; btn.classList.add('ghost'); };
+    rec.start(); label.textContent = '듣는 중… (누르면 멈춤)'; btn.classList.remove('ghost');
+    hint.textContent = targetId==='wkText' ? '한 운동과 시간을 말해 주세요. 예: "스쿼트 5세트랑 걷기 20분"' : '먹은 음식과 양을 말해 주세요. 예: "아침에 계란 두 개랑 바나나 하나"';
   } catch { rec = null; hint.innerHTML = '<b>여기서는 마이크를 쓸 수 없어요.</b> 키보드의 마이크(받아쓰기) 버튼으로 말해 주세요.'; }
 }
 
@@ -1515,7 +1526,7 @@ function openWork(){
   const tmr = S.me.routine?.[dowOf(S.date)]?.parts || [];
   $('#wkStr').innerHTML = STR.map(([n])=>`<button type="button" class="chip" data-act="wk" data-v="${n}" aria-pressed="false">${n}${tmr.includes(n)?' ★':''}</button>`).join('');
   $('#wkCar').innerHTML = CAR.map(([n])=>`<button type="button" class="chip" data-act="wk" data-v="${n}" aria-pressed="false">${n}</button>`).join('');
-  $('#wkMin').value = ''; $('#wkMemo').value = ''; $('#wkInt').value = '1';
+  $('#wkMin').value = ''; $('#wkMemo').value = ''; $('#wkInt').value = '1'; $('#aiWorkOut').innerHTML = '';
   calcWork();
   $('#workSheet').hidden = false;
 }
@@ -1528,6 +1539,58 @@ function workKcal(){
 function calcWork(){
   const k = workKcal(), el = $('#wkCalc');
   el.innerHTML = !S.wkType ? '운동 종류와 시간을 고르면 소모 칼로리를 계산해요. ★ 표시는 오늘 루틴이에요.' : !(+$('#wkMin').value) ? `<b>${S.wkType}</b> · 시간을 입력해 주세요` : `<b>${S.wkType}</b> ${$('#wkMin').value}분 → 약 <b class="num" style="font-size:1.2rem">${k}</b> kcal 소모 (체중 ${S.me.weight}kg 기준)`;
+}
+
+/* AI workout parsing */
+const INT_LABEL = {0.8:'가볍게', 1:'보통', 1.2:'힘들게'};
+function metOf(type){ const x = STR.find(t=>t[0]===type) || CAR.find(t=>t[0]===type); return x ? x[1] : null; }
+async function aiWork(text){
+  const out = $('#aiWorkOut');
+  if(!S.aiOn){ out.innerHTML = `<div class="note warn">AI 분석은 아직 준비 중이에요. 아래에서 운동을 직접 골라 주세요.</div>`; return; }
+  out.innerHTML = thinking('운동 내용을 정리하는 중…');
+  const types = [...STR, ...CAR].map(t=>t[0]).join(', ');
+  const prompt = `너는 한국어를 쓰는 퍼스널 트레이너야. 사용자가 말한 운동 기록을 운동별로 정리해.
+사용자 체중: ${S.me.weight}kg
+type은 반드시 다음 중 하나: ${types}, 기타
+규칙:
+- 근력 운동은 주로 쓴 부위로 type을 고르고, 같은 부위 여러 종목은 한 항목으로 묶어 memo에 종목·무게·세트를 적어.
+- min은 운동 시간(분, 정수). 말하지 않았으면 근력은 세트당 3분, 유산소는 일반적인 시간으로 추정.
+- intensity는 0.8(가볍게), 1(보통), 1.2(힘들게) 중 하나.
+- kcal은 체중 기준 소모 칼로리 추정(정수).
+- 운동이 아니면 items를 빈 배열로.
+JSON만 출력: {"items":[{"type":"","name":"","min":0,"intensity":1,"memo":"","kcal":0}]}
+사용자 기록: ${text}`;
+  try {
+    const res = await aiJson(prompt, {effort:'low'});
+    const items = (res?.items||[]).filter(x => x && (x.type || x.name) && +x.min > 0);
+    S.aiWork = items.map(it => {
+      const type = metOf(it.type) ? it.type : '기타', intensity = [0.8,1,1.2].includes(+it.intensity) ? +it.intensity : 1, min = r0(it.min);
+      const met = metOf(type);
+      return {type, name: type==='기타' ? String(it.name||'운동').slice(0,20) : type, min, intensity, memo:String(it.memo||it.name||'').slice(0,120),
+        kcal: met ? r0(met * intensity * (+S.me.weight||65) * min / 60) : r0(it.kcal)};
+    });
+    if(!S.aiWork.length){ out.innerHTML = `<div class="note warn">운동을 찾지 못했어요. 운동 이름과 시간을 함께 적어 주세요.</div>`; return; }
+    out.innerHTML = `<div class="section-label">분석 결과 · 숫자를 고칠 수 있어요</div>
+      ${S.aiWork.map((w,i)=>`<div class="ai-row"><input type="checkbox" checked id="awc-${i}" aria-label="${esc(w.name)} 포함"><div>
+        <b>${esc(w.name)}</b> <span class="tag" style="${STR.some(t=>t[0]===w.type)?'':'background:var(--fat-soft);color:var(--fat)'}">${STR.some(t=>t[0]===w.type)?'근력':'유산소·기타'}</span>
+        ${w.memo?`<div class="tiny" style="margin-top:2px">${esc(w.memo)}</div>`:''}
+        <div class="g" style="grid-template-columns:repeat(3,1fr)"><label>시간(분)<input id="awm-${i}" type="number" min="1" value="${w.min}" inputmode="numeric"></label><label>강도<select id="awi-${i}" style="padding:6px;border:1.5px solid var(--line);border-radius:8px">${[0.8,1,1.2].map(v=>`<option value="${v}" ${v===w.intensity?'selected':''}>${INT_LABEL[v]}</option>`).join('')}</select></label><label>kcal<input id="awk-${i}" type="number" min="0" value="${w.kcal}" inputmode="numeric"></label></div>
+      </div></div>`).join('')}
+      <button type="button" class="btn block" data-act="save-ai-work">운동 기록하기</button>`;
+  } catch(e){ out.innerHTML = `<div class="note warn">${aiErrText(e?.code)}</div>`; }
+}
+function saveAiWork(){
+  const d = curDay(); let n = 0, total = 0;
+  S.aiWork.forEach((w,i) => {
+    if(!$('#awc-'+i)?.checked) return;
+    const min = +$('#awm-'+i).value || w.min, intensity = +$('#awi-'+i).value || 1, met = metOf(w.type);
+    const kcal = met && min !== w.min || met && intensity !== w.intensity ? r0(met * intensity * (+S.me.weight||65) * min / 60) : (+$('#awk-'+i).value || 0);
+    d.workouts.push({id:uidGen(), name:w.name, kind: STR.some(t=>t[0]===w.type) ? 'str' : 'car', min, intensity, intLabel:INT_LABEL[intensity], memo:w.memo, kcal});
+    n++; total += kcal;
+  });
+  if(!n){ toast('기록할 운동을 골라 주세요'); return; }
+  commitDay(d); $('#workSheet').hidden = true; $('#wkText').value = ''; $('#aiWorkOut').innerHTML = '';
+  toast(`운동 ${n}개 기록 완료! -${total} kcal`);
 }
 
 /* ---------- Social actions ---------- */
@@ -1668,7 +1731,7 @@ document.addEventListener('click', async e => {
     case 'close-sheet': b.closest('.overlay').hidden = true; break;
     case 'close-ob': $('#obSheet').hidden = true; break;
     case 'slot': S.slot = b.dataset.v; $$('#slotChips .chip').forEach(c=>c.setAttribute('aria-pressed', c.dataset.v===S.slot)); { const sb = $('[data-act="save-ai"]'); if(sb) sb.textContent = `${S.slot}에 기록하기`; } break;
-    case 'voice': startVoice(b.dataset.target); break;
+    case 'voice': startVoice(b.dataset.target, b, b.dataset.hint); break;
     case 'ai-food': { const txt = $('#foodText').value.trim(); if(!txt){ toast('먹은 음식을 적거나 말해 주세요'); $('#foodText').focus(); break; } aiFood(txt); break; }
     case 'ai-photo': if(S.photoBlob) aiFood($('#photoMemo').value.trim(), S.photoBlob); break;
     case 'save-ai': {
@@ -1681,6 +1744,8 @@ document.addEventListener('click', async e => {
     case 'del-work': { const d = curDay(); d.workouts = d.workouts.filter(w=>w.id!==id); commitDay(d); break; }
     case 'wk': S.wkType = b.dataset.v; $$('[data-act="wk"]').forEach(c=>c.setAttribute('aria-pressed', c.dataset.v===S.wkType)); calcWork(); break;
     case 'ai-coach': aiCoach(); break;
+    case 'ai-work': { const t = $('#wkText').value.trim(); if(!t){ toast('한 운동을 적거나 말해 주세요'); $('#wkText').focus(); break; } aiWork(t); break; }
+    case 'save-ai-work': saveAiWork(); break;
     case 'edit-profile': openOnboarding(false, b.dataset.step); break;
     case 'ob-next': setSeg('ob', b.dataset.v); $('#obSheet .sheet').scrollTop = 0; break;
     case 'ob-av': S.obDraft.avatar = b.dataset.v; drawObPickers(); break;
