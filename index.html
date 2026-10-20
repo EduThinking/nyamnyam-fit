@@ -6,6 +6,19 @@
 <meta name="theme-color" content="#FFF8FA">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="냠냠핏">
+<meta name="description" content="목표별 식단·운동 기록, 탄단지 그래프, 내일 식단·운동 추천, 친구와 함께하는 챌린지까지. 먹고, 움직이고, 같이 기록해요!">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="냠냠핏">
+<meta property="og:title" content="냠냠핏 - 먹고, 움직이고, 같이 기록해요!">
+<meta property="og:description" content="식단·운동 기록, 탄단지 그래프, 내일 추천, 친구랑 챌린지. 득근! 득근!">
+<meta property="og:url" content="https://nyamnyam-fit.vercel.app/">
+<meta property="og:image" content="https://nyamnyam-fit.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="냠냠핏 - 먹고, 움직이고, 같이 기록해요!">
+<meta name="twitter:image" content="https://nyamnyam-fit.vercel.app/og.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon-180.png">
@@ -336,6 +349,7 @@ textarea.input{min-height:96px;resize:vertical}
     </div>
     <span class="sp"></span>
     <span id="chanPill" class="pill chan-pill" hidden></span>
+    <button id="musicBtn" class="pill" data-act="snd-music" style="border:0;font-size:1rem;min-width:36px;justify-content:center" aria-label="배경음악">♪</button>
     <button id="savePill" class="pill" data-act="retry-save" style="border:0" aria-live="polite">연결 중</button>
   </header>
 
@@ -481,6 +495,10 @@ textarea.input{min-height:96px;resize:vertical}
     <section class="card">
       <div class="card-h"><h2>획득한 배지</h2></div>
       <div id="badgeBox"></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>소리 설정</h2></div>
+      <div id="soundBox" class="stack" style="gap:12px"></div>
     </section>
     <section class="card">
       <div class="card-h"><h2>데이터 저장</h2></div>
@@ -1373,7 +1391,7 @@ function renderMe(){
   const td = dowOf(todayKey());
   $('#routineBox').innerHTML = `<div class="week-rt">${[1,2,3,4,5,6,0].map(i=>{const r=p.routine?.[i]; return `<div class="${i===td?'today':''}"><b>${DOW[i]}</b>${r?.parts?.length?esc(r.parts.join(' ')):'–'}</div>`;}).join('')}</div>`;
   $('#badgeBox').innerHTML = (p.badges||[]).length ? `<div class="badges">${p.badges.map(b=>`<span>${esc(b.emoji)} ${esc(b.title)}</span>`).join('')}</div>` : `<p class="small muted">챌린지를 완료하면 배지를 받아요.</p>`;
-  renderDataBox();
+  renderDataBox(); renderSoundBox();
 }
 function renderDataBox(){
   if(!S.me) return;
@@ -1468,7 +1486,7 @@ function addMeals(items, src){
   const d = curDay();
   for(const it of items) d.meals.push({id:uidGen(), slot:S.slot, name:String(it.name).slice(0,40), amt:String(it.amount||it.amt||'').slice(0,40), kcal:r0(it.kcal), c:r1(it.carb ?? it.c), p:r1(it.protein ?? it.p), f:r1(it.fat ?? it.f), src,
     ...(it.fkey ? {fkey:it.fkey, baseAmt:it.baseAmt, qty:it.qty} : {})});
-  commitDay(d);
+  commitDay(d); Snd.cheer();
   toast(`${S.slot}에 ${items.length}개 기록했어요`);
 }
 /* ---------- Food catalog: built-in list + foods shared by users ---------- */
@@ -1691,7 +1709,7 @@ function saveAiWork(){
   });
   if(!n){ toast('기록할 운동을 골라 주세요'); return; }
   commitDay(d); $('#workSheet').hidden = true; $('#wkText').value = ''; $('#aiWorkOut').innerHTML = '';
-  toast(`운동 ${n}개 기록 완료! -${total} kcal`);
+  Snd.cheer(); toast(`운동 ${n}개 기록 완료! -${total} kcal`);
 }
 
 /* ---------- Social actions ---------- */
@@ -1777,6 +1795,121 @@ JSON 형식: {"summary":"","good":[""],"improve":[""],"prediction":"","workout":
   } finally { $('#aiCoachBtn').disabled = false; }
 }
 
+/* ---------- Sound: generated BGM + tap effects ---------- */
+// "냠냠 득근송" — 8-bar C major loop at 112 BPM. Melody in eighth notes: MIDI number, 0 = rest, -1 = hold previous.
+const SONG = {
+  bpm: 112,
+  chords: [[60,64,67],[57,60,64],[53,57,60],[55,59,62],[60,64,67],[57,60,64],[53,57,60],[55,59,62]],
+  melody: [
+    76,79,76,72, 74,76,79,0,   81,79,76,72, 74,-1,76,0,
+    77,81,77,72, 74,77,81,0,   79,77,76,74, 71,-1,67,0,
+    76,79,84,79, 76,79,84,0,   81,84,81,76, 79,-1,76,0,
+    77,76,74,72, 74,76,77,81,  79,-1,83,-1, 84,-1,-1,0,
+  ],
+};
+const SND_DEFAULT = {music:true, vol:0.35, sfx:'pop', sfxVol:0.6};
+const Snd = {
+  ctx:null, master:null, musicGain:null, timer:null, nextT:0, step:0, playing:false,
+  cfg: (() => { try { return {...SND_DEFAULT, ...(JSON.parse(localStorage.getItem('nyam:sound'))||{})}; } catch { return {...SND_DEFAULT}; } })(),
+  save(){ try { localStorage.setItem('nyam:sound', JSON.stringify(this.cfg)); } catch {} },
+  init(){
+    if(this.ctx) return this.ctx;
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return null;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain(); this.master.gain.value = 1;
+    const lp = this.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200;
+    this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.cfg.vol * 0.5;
+    this.musicGain.connect(lp); lp.connect(this.master); this.master.connect(this.ctx.destination);
+    return this.ctx;
+  },
+  hz: m => 440 * Math.pow(2, (m - 69) / 12),
+  tone(t, midi, dur, type, gain, dest){
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type; o.frequency.value = this.hz(midi);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(gain * 0.5, t + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 0.02);
+  },
+  noise(t, dur, gain, dest, freq){
+    const n = this.ctx.createBufferSource(), len = Math.floor(this.ctx.sampleRate * dur);
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
+    for(let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const f = this.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = freq;
+    const g = this.ctx.createGain(); g.gain.value = gain;
+    n.buffer = buf; n.connect(f); f.connect(g); g.connect(dest); n.start(t);
+  },
+  kick(t, dest){
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+    g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+    o.connect(g); g.connect(dest); o.start(t); o.stop(t + 0.16);
+  },
+  schedule(){
+    const e = 60 / SONG.bpm / 2; // eighth-note length
+    while(this.nextT < this.ctx.currentTime + 0.25){
+      const i = this.step % SONG.melody.length, bar = Math.floor(i / 8), pos = i % 8, t = this.nextT, dest = this.musicGain;
+      const m = SONG.melody[i];
+      if(m > 0){ let len = 1; while(SONG.melody[(i + len) % SONG.melody.length] === -1) len++; this.tone(t, m, e * len * 0.95, 'square', 0.11, dest); this.tone(t, m + 12, e * len * 0.6, 'sine', 0.035, dest); }
+      const ch = SONG.chords[bar];
+      if(pos % 4 === 0) this.tone(t, ch[0] - 24, e * 1.8, 'triangle', 0.3, dest);
+      if(pos % 4 === 2) this.tone(t, ch[0] - 12, e * 1.2, 'triangle', 0.18, dest);
+      if(pos % 2 === 1) ch.forEach(n => this.tone(t, n, e * 0.5, 'triangle', 0.035, dest));
+      if(pos === 0 || pos === 4) this.kick(t, dest);
+      if(pos === 2 || pos === 6) this.noise(t, 0.05, 0.06, dest, 6000);
+      this.nextT += e; this.step++;
+    }
+  },
+  startMusic(){
+    if(!this.cfg.music || this.playing || document.hidden) return;
+    if(!this.init()) return;
+    this.ctx.resume();
+    this.playing = true; this.nextT = this.ctx.currentTime + 0.1;
+    this.musicGain.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.musicGain.gain.setValueAtTime(0, this.ctx.currentTime); this.musicGain.gain.linearRampToValueAtTime(this.cfg.vol * 0.5, this.ctx.currentTime + 1.5);
+    this.timer = setInterval(() => this.schedule(), 60); this.schedule();
+  },
+  stopMusic(){ if(!this.playing) return; clearInterval(this.timer); this.playing = false; },
+  setVol(v){ this.cfg.vol = v; this.save(); if(this.musicGain) this.musicGain.gain.setTargetAtTime(v * 0.5, this.ctx.currentTime, 0.05); },
+  pop(){
+    if(!this.init()) return; this.ctx.resume();
+    const t = this.ctx.currentTime, g = this.ctx.createGain(); g.gain.value = this.cfg.sfxVol * 0.5; g.connect(this.master);
+    const o = this.ctx.createOscillator(), og = this.ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(620, t); o.frequency.exponentialRampToValueAtTime(1250, t + 0.07);
+    og.gain.setValueAtTime(0.6, t); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(og); og.connect(g); o.start(t); o.stop(t + 0.13);
+  },
+  lastVoice:0,
+  voice(text = '득근! 득근!'){
+    const now = Date.now(); if(now - this.lastVoice < 700) return this.pop(); this.lastVoice = now;
+    const ss = window.speechSynthesis;
+    if(!ss || !window.SpeechSynthesisUtterance){ this.pop(); return; }
+    try {
+      ss.cancel();
+      const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.pitch = 1.8; u.rate = 1.35; u.volume = this.cfg.sfxVol;
+      const ko = ss.getVoices().find(v => /ko/i.test(v.lang)); if(ko) u.voice = ko;
+      ss.speak(u);
+    } catch { this.pop(); }
+  },
+  tap(){ if(this.cfg.sfx === 'pop') this.pop(); else if(this.cfg.sfx === 'voice') this.voice(); },
+  // Celebrations (saving a record) always use the cheer when effects are on.
+  cheer(){ if(this.cfg.sfx === 'off') return; this.cfg.sfx === 'voice' ? this.voice('득근! 득근! 잘했어요!') : this.pop(); },
+};
+document.addEventListener('visibilitychange', () => { if(document.hidden) Snd.stopMusic(); else if(Snd.ctx && Snd.cfg.music) Snd.startMusic(); });
+// Browsers allow sound only after the first touch.
+document.addEventListener('pointerdown', () => { if(Snd.cfg.music) Snd.startMusic(); }, {capture:true});
+function renderSoundBox(){
+  const c = Snd.cfg, box = $('#soundBox'); if(!box) return;
+  box.innerHTML = `
+    <div class="li" style="border:0;padding:0"><div class="main"><div class="nm">배경음악 "냠냠 득근송"</div><div class="sub">화면을 누르면 잔잔하게 흘러나와요</div></div>
+      <button class="btn sm ${c.music?'':'plain'}" data-act="snd-music" aria-pressed="${c.music}">${c.music?'켜짐':'꺼짐'}</button></div>
+    <label class="f" style="font-size:.85rem">음악 크기<input type="range" id="sndVol" min="0" max="1" step="0.05" value="${c.vol}" ${c.music?'':'disabled'} style="accent-color:var(--accent)"></label>
+    <div><div class="nm" style="font-weight:700;margin-bottom:6px">누를 때 효과음</div>
+      <div class="chips">${[['off','끄기'],['pop','뿅!'],['voice','득근! 득근!']].map(([v,l])=>`<button class="chip" data-act="snd-sfx" data-v="${v}" aria-pressed="${c.sfx===v}">${l}</button>`).join('')}</div></div>
+    <label class="f" style="font-size:.85rem">효과음 크기<input type="range" id="sndSfxVol" min="0" max="1" step="0.05" value="${c.sfxVol}" ${c.sfx==='off'?'disabled':''} style="accent-color:var(--accent)"></label>
+    <p class="tiny">"득근! 득근!"은 휴대폰의 음성 읽기 기능으로 말해요. 기기에 따라 목소리가 달라요. 무음 모드에서는 소리가 나지 않을 수 있어요.</p>`;
+  const hb = $('#musicBtn'); if(hb){ hb.textContent = c.music ? '♪' : '♪̸'; hb.setAttribute('aria-pressed', c.music); hb.setAttribute('aria-label', c.music ? '배경음악 끄기' : '배경음악 켜기'); }
+}
+
 /* ---------- Login ---------- */
 S.authMode = 'login';
 function drawAuth(){
@@ -1823,6 +1956,7 @@ document.addEventListener('click', async e => {
   if(e.target.classList.contains('overlay') && e.target.id!=='obSheet' && e.target.id!=='authSheet'){ e.target.hidden = true; return; }
   const b = e.target.closest('[data-act]'); if(!b) return;
   const a = b.dataset.act, id = b.dataset.id;
+  if(!a.startsWith('snd-') && a!=='voice') Snd.tap();
   if(b.tagName==='A') e.preventDefault();
   switch(a){
     case 'day-prev': S.date = addDays(S.date,-1); renderAll(); break;
@@ -1890,6 +2024,8 @@ document.addEventListener('click', async e => {
       renderAll(); toast('기록을 모두 지웠어요');
     }); break;
     case 'cf-yes': $('#confirmSheet').hidden = true; S.cfAction?.(); S.cfAction = null; break;
+    case 'snd-music': Snd.cfg.music = !Snd.cfg.music; Snd.save(); if(Snd.cfg.music) Snd.startMusic(); else Snd.stopMusic(); renderSoundBox(); toast(Snd.cfg.music ? '배경음악을 켰어요 ♪' : '배경음악을 껐어요'); break;
+    case 'snd-sfx': Snd.cfg.sfx = b.dataset.v; Snd.save(); renderSoundBox(); Snd.tap(); break;
     case 'retry-save': if(S.uid){ retryDirty(); toast('다시 저장하는 중이에요'); } break;
     case 'logout': await sb.auth.signOut(); break;
     case 'auth-mode': S.authMode = b.dataset.v; drawAuth(); break;
@@ -1922,7 +2058,7 @@ document.addEventListener('submit', e => {
     const d = curDay(), kind = STR.some(x=>x[0]===S.wkType) ? 'str' : 'car';
     const intSel = $('#wkInt');
     d.workouts.push({id:uidGen(), name:S.wkType, kind, min:+$('#wkMin').value, intensity:+intSel.value, intLabel:intSel.options[intSel.selectedIndex].text, memo:$('#wkMemo').value.trim(), kcal:workKcal()});
-    commitDay(d); $('#workSheet').hidden = true; toast(`${S.wkType} 기록 완료! -${workKcal()} kcal`);
+    commitDay(d); Snd.cheer(); $('#workSheet').hidden = true; toast(`${S.wkType} 기록 완료! -${workKcal()} kcal`);
   } else if(f.id==='weightForm'){
     const v = +$('#weightIn').value; if(!v){ toast('체중을 입력해 주세요'); return; }
     const d = curDay(); d.weight = r1(v); commitDay(d); toast(`${r1(v)}kg 저장했어요`); $('#weightIn').blur();
@@ -1934,9 +2070,12 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('input', e => {
   if(e.target.id==='foodQ') renderFoodSearch();
+  if(e.target.id==='sndVol') Snd.setVol(+e.target.value);
+  if(e.target.id==='sndSfxVol'){ Snd.cfg.sfxVol = +e.target.value; Snd.save(); }
   if(e.target.id==='wkMin' || e.target.id==='wkInt') calcWork();
 });
 document.addEventListener('change', async e => {
+  if(e.target.id==='sndSfxVol') Snd.tap();
   if(e.target.id==='cMetric') onMetric();
   if(e.target.id==='wkInt') calcWork();
   if(e.target.id==='photoIn'){
