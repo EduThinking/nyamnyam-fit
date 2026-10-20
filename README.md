@@ -9,7 +9,7 @@
 ## 1. Supabase (무료 데이터베이스와 로그인)
 1. https://supabase.com 에 가입하고 **New project**를 만들어요. Region은 Northeast Asia (Seoul)을 골라요.
 2. 왼쪽 메뉴 **SQL Editor**를 열고, `supabase.sql` 내용을 전부 붙여 넣은 뒤 **Run**을 눌러요.
-3. 같은 방법으로 `supabase-foods.sql`(음식 목록 공유)과 `supabase-rewards.sql`(출석 덤벨·덤벨 선물), `supabase-photos.sql`(채널 글 사진)도 실행해요.
+3. 같은 방법으로 `supabase-foods.sql`(음식 목록 공유)과 `supabase-rewards.sql`(출석 덤벨·덤벨 선물), `supabase-photos.sql`(채널 글 사진), `supabase-chat.sql`(전체 실시간 채팅)도 실행해요.
 4. **Authentication → Sign In / Providers → Email**에서 **Confirm email을 꺼요**. 켜 두면 가입할 때마다 인증 메일이 가는데, 무료 메일 발송은 시간당 몇 통으로 제한돼서 가입이 막혀요.
 4. **Project Settings → API**에서 아래 두 값을 복사해 두세요.
    - Project URL (`https://xxxx.supabase.co`)
