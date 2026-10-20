@@ -526,6 +526,10 @@ textarea.input{min-height:96px;resize:vertical}
       <div id="badgeBox"></div>
     </section>
     <section class="card">
+      <div class="card-h"><h2>공지사항</h2><button class="btn sm ghost" data-act="notice-open">다시 보기</button></div>
+      <p class="small muted">매주 닭가슴살 1등에게 메가커피 쿠폰을 드려요. 이름은 실명으로 바꿔 주세요!</p>
+    </section>
+    <section class="card">
       <div class="card-h"><h2>소리 설정</h2></div>
       <div id="soundBox" class="stack" style="gap:12px"></div>
     </section>
@@ -563,7 +567,7 @@ textarea.input{min-height:96px;resize:vertical}
     </div>
     <form id="obForm" class="stack">
       <div id="ob-me" class="stack">
-        <label class="f">닉네임<input class="input" id="obNick" maxlength="12" required placeholder="커뮤니티에 보일 이름"></label>
+        <label class="f">이름 (실명)<input class="input" id="obNick" maxlength="12" required placeholder="실명을 적어 주세요 (예: 홍길동)" autocomplete="name"></label>
         <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92rem">캐릭터<div class="av-pick" id="obAv"></div></div>
         <div class="grid2">
           <label class="f">성별<select class="input" id="obSex"><option value="m">남성</option><option value="f">여성</option></select></label>
@@ -753,6 +757,17 @@ textarea.input{min-height:96px;resize:vertical}
   </div>
 </div>
 
+<!-- Notice -->
+<div class="overlay" id="noticeSheet" hidden style="z-index:80;align-items:center;padding:16px">
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="noticeTitle" style="max-width:440px;width:100%;max-height:90%;overflow:auto">
+    <div class="hello" style="margin-bottom:12px">
+      <svg viewBox="0 0 64 64" aria-hidden="true" style="width:52px;height:52px"><path d="M32 6c10 0 26 22 26 34 0 11-11 18-26 18S6 51 6 40C6 28 22 6 32 6z" fill="#fff" stroke="#2A2233" stroke-width="3"/><path d="M9 44c4 8 13 12 23 12s19-4 23-12v6c-4 6-12 8-23 8S13 56 9 50z" fill="#2A2233"/><circle cx="23" cy="34" r="3.2" fill="#2A2233"/><circle cx="41" cy="34" r="3.2" fill="#2A2233"/><ellipse cx="18" cy="40" rx="4" ry="2.5" fill="#FF9DB9"/><ellipse cx="46" cy="40" rx="4" ry="2.5" fill="#FF9DB9"/><path d="M28 39q4 4 8 0" fill="none" stroke="#2A2233" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <div><span class="tag" style="background:var(--accent-soft);color:var(--accent-ink)">공지</span><h2 id="noticeTitle" style="margin-top:4px">냠냠핏 공지사항</h2></div>
+    </div>
+    <div id="noticeBody" class="stack" style="gap:10px"></div>
+    <button class="btn block" data-act="notice-ok" style="margin-top:16px">확인했어요, 득근!</button>
+  </div>
+</div>
 <div class="lightbox" id="lightbox" hidden data-act="lightbox-close"><img id="lightboxImg" alt="첨부 사진 크게 보기"></div>
 <div class="toast" id="toast" hidden></div>
 
@@ -854,6 +869,7 @@ function macroOk(t, T, ch){
   if(ch==='keto') return t.c <= T.c && t.f >= T.f*0.7;
   return t.c >= T.c*0.7 && t.c <= T.c*1.15 && t.f >= T.f*0.6 && t.f <= T.f*1.2;
 }
+const weekChicken = p => { if(!p?.chickenDays) return 0; const m = mondayOf(todayKey()); let s = 0; for(let i=0;i<7;i++) s += +p.chickenDays[addDays(m,i)]||0; return s; };
 const kcalHit = (t, T) => t.meals > 0 && Math.abs(t.kcal - T.kcal) <= T.kcal*0.1;
 function dayPoints(d, T, ch){
   const t = dayTotals(d); if(!T) return 0;
@@ -1001,6 +1017,7 @@ async function startSession(user){
   S.dirty = LS.get('dirty:'+S.uid) || {};
   try { await loadMine(); } catch(e){ console.warn(e); toast(errText(e?.code||'load', e?.message)); }
   if(!S.me) openOnboarding(true);
+  showNotice();
   renderAll();
   loadSocial(); loadFoods(); claimGift();
   setInterval(() => { if(!document.hidden) loadSocial(); }, 30000);
@@ -1305,18 +1322,18 @@ function renderChan(){
   $('#postList').innerHTML = posts.length ? posts.map(postHtml).join('') : `<div class="card">${emptyArt('첫 글을 남겨 보세요', `${ch.name} 채널 사람들과 식단 팁과 인증을 나눠요`)}</div>`;
   // ranking
   const chick = S.seg.rank==='chicken';
-  $('#rankTitle').textContent = chick ? '🍗 닭가슴살 랭킹 (전체)' : `${ch.name} 랭킹`;
-  const ps = Object.entries(S.profiles).filter(([,p]) => p?.nick && (chick || p.channel===vc)).map(([id,p]) => ({id, p, v: chick ? (+p.chicken||0) : S.seg.rank==='week' ? weekPts(p) : totalPts(p)})).sort((a,b)=>b.v-a.v);
+  $('#rankTitle').textContent = chick ? '🍗 이번 주 닭가슴살 랭킹' : `${ch.name} 랭킹`;
+  const ps = Object.entries(S.profiles).filter(([,p]) => p?.nick && (chick || p.channel===vc)).map(([id,p]) => ({id, p, v: chick ? weekChicken(p) : S.seg.rank==='week' ? weekPts(p) : totalPts(p)})).sort((a,b)=>b.v-a.v);
   if(!ps.length){ $('#rankList').innerHTML = emptyArt('아직 랭킹이 없어요','기록을 시작하면 점수가 쌓여요'); return; }
   const top = ps.slice(0,3);
   const podium = ps.length>=3 ? `<div class="podium">${[1,0,2].map(i=>{const x=top[i]; return `<div class="${i===0?'p1':''}"><div class="av" style="margin:0 auto 4px">${esc(x.p.avatar||'🐰')}</div><div class="nm">${esc(x.p.nick)}</div><div class="num">${x.v}${chick?'🍗':'점'}</div><div class="tiny">${i+1}위</div></div>`;}).join('')}</div>` : '';
   const myIdx = ps.findIndex(x=>x.id===S.uid);
   const shown = ps.slice(0,30);
-  $('#rankList').innerHTML = (chick ? '<p class="tiny" style="margin-bottom:8px">하루 권장 칼로리를 ±10% 안으로 지키면 닭가슴살 10개를 받아요.</p>' : '') + podium + shown.map((x,i)=>rankRow(x,i,chick)).join('') + (myIdx>=30 ? `<div class="tiny" style="text-align:center">⋯</div>${rankRow(ps[myIdx], myIdx, chick)}` : '');
+  $('#rankList').innerHTML = (chick ? `<div class="note pink small" style="margin-bottom:10px">☕ <b>매주 1등에게 메가커피 쿠폰!</b> 하루 권장 칼로리를 ±10% 안으로 지키면 닭가슴살 10개. 이번 주(${shortDate(mondayOf(todayKey()))}~${shortDate(addDays(mondayOf(todayKey()),6))}) 기준이에요.</div>` : '') + podium + shown.map((x,i)=>rankRow(x,i,chick)).join('') + (myIdx>=30 ? `<div class="tiny" style="text-align:center">⋯</div>${rankRow(ps[myIdx], myIdx, chick)}` : '');
 }
 function rankRow(x, i, chick){
   const st = streakOf(x.p);
-  if(chick) return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${esc(CHANNELS[x.p.channel]?.name||'')}${x.p.chickenDays?.[todayKey()]?' · 오늘 +10🍗':''}</span></span><span class="pts">${x.v.toLocaleString()}🍗</span></div>`;
+  if(chick) return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${i===0&&x.v>0?'☕ 메가커피 쿠폰 · ':''}누적 ${(+x.p.chicken||0).toLocaleString()}🍗${x.p.chickenDays?.[todayKey()]?' · 오늘 +10🍗':''}</span></span><span class="pts">${x.v.toLocaleString()}🍗</span></div>`;
   return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${st?`${st}일 연속 기록 · `:''}오늘 ${x.p.today?.date===todayKey()?x.p.today.pts:0}점</span></span><span class="pts">${x.v}</span></div>`;
 }
 function postHtml(p){
@@ -2129,6 +2146,23 @@ function openExternal(){
   location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url);
 }
 
+/* ---------- Notice: shown once per version after login ---------- */
+const NOTICE = {
+  version: '2026-10-20',
+  lines: [
+    '안녕하세요, <b>냠냠핏 개발자</b>입니다. 👋',
+    '<b>이름은 무조건 실명으로</b> 변경 부탁드리겠습니다. (내 정보 → 프로필·목표 수정)',
+    '자신의 식단과 운동 기록은 <b>양심껏</b> 기록해 주세요 ^^ (거짓말 치면 <b>319호에서 집합</b>하겠습니다.)',
+    '🍗 매주 <b>닭가슴살 1등</b>에게는 <b>메가커피 쿠폰</b>을 지급합니다! ☕',
+    '오늘도 득근하세여~~ 💪',
+  ],
+};
+function showNotice(force){
+  if(!force && LS.get('notice:'+S.uid) === NOTICE.version) return;
+  $('#noticeBody').innerHTML = NOTICE.lines.map(l => `<p>${l}</p>`).join('');
+  $('#noticeSheet').hidden = false;
+}
+
 /* ---------- Login ---------- */
 S.authMode = 'login';
 function drawAuth(){
@@ -2174,7 +2208,7 @@ document.addEventListener('click', async e => {
   if(anyBtn && !String(anyBtn.dataset.act||'').startsWith('snd-') && anyBtn.dataset.act!=='voice') Snd.tap();
   const tabB = e.target.closest('[data-tab]'); if(tabB){ setTab(tabB.dataset.tab); return; }
   const segB = e.target.closest('[data-seg]'); if(segB){ setSeg(segB.dataset.seg, segB.dataset.v); return; }
-  if(e.target.classList.contains('overlay') && e.target.id!=='obSheet' && e.target.id!=='authSheet'){ e.target.hidden = true; return; }
+  if(e.target.classList.contains('overlay') && !['obSheet','authSheet','noticeSheet'].includes(e.target.id)){ e.target.hidden = true; return; }
   const b = e.target.closest('[data-act]'); if(!b) return;
   const a = b.dataset.act, id = b.dataset.id;
   if(b.tagName==='A') e.preventDefault();
@@ -2239,6 +2273,8 @@ document.addEventListener('click', async e => {
     case 'open-external': openExternal(); break;
     case 'install-app': if(installEvt){ installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; renderInstall(); }); } break;
     case 'install-dismiss': LS.set('installDismiss', Date.now() + 7*86400000); renderInstall(); break;
+    case 'notice-ok': LS.set('notice:'+S.uid, NOTICE.version); $('#noticeSheet').hidden = true; Snd.cheer(); break;
+    case 'notice-open': showNotice(true); break;
     case 'add-all-friends': { const l = {...S.friends}; let n = 0; for(const id of Object.keys(S.profiles)) if(id!==S.uid && S.profiles[id]?.nick && !l[id]){ l[id] = true; n++; } store.saveFriends(l); toast(`${n}명과 친구가 됐어요!`); renderTogether(); break; }
     case 'people-more': S.peopleAll = true; renderPeople(); break;
     case 'add-friend': { const l = {...S.friends, [id]:true}; store.saveFriends(l); toast(`${S.profiles[id]?.nick} 님을 친구로 추가했어요`); $('#friendSearch').innerHTML=''; $('#friendIn').value=''; renderTogether(); break; }
