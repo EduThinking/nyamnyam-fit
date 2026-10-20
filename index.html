@@ -402,6 +402,16 @@ textarea.input{min-height:96px;resize:vertical}
 .enter-banner .big{font-size:1.8rem}
 @keyframes drop{from{transform:translate(-50%,-30px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
 @media (prefers-reduced-motion:reduce){.enter-banner{animation:none}}
+.avw{position:relative;flex:none;display:inline-block}
+.ol{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;border:2.5px solid #fff;background:var(--bad)}
+.ol.on{background:var(--good)}
+.olt{font-size:.74rem;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+.olt::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--bad)}
+.olt.on{color:var(--good)}.olt.on::before{background:var(--good)}
+.olt.off{color:var(--ink3)}
+.stt{font-size:.74rem;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--ink2);white-space:nowrap}
+.stt.workout{background:var(--prot-soft);color:var(--prot)}.stt.meal{background:var(--carb-soft);color:#875900}
+.stt.rest{background:var(--fat-soft);color:#0E7A61}.stt.sleep{background:#ECE6FF;color:#6A4FD8}
 .toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-weight:600;font-size:.92rem;max-width:calc(100% - 32px);text-align:center}
 
 .banner{margin-bottom:12px}
@@ -554,6 +564,7 @@ textarea.input{min-height:96px;resize:vertical}
       <button data-seg="tog" data-v="chal" aria-pressed="false">챌린지</button>
     </div>
     <div id="togFriends" class="stack">
+      <section class="card" id="myStatus"></section>
       <section class="card" id="cheerBox" hidden></section>
       <section class="card">
         <div class="card-h"><h2>친구 추가</h2></div>
@@ -1103,7 +1114,8 @@ async function startSession(user){
   S.dirty = LS.get('dirty:'+S.uid) || {};
   try { await loadMine(); } catch(e){ console.warn(e); toast(errText(e?.code||'load', e?.message)); }
   if(!S.me) openOnboarding(true);
-  else rescoreIfNeeded();
+  else { rescoreIfNeeded(); touchLastSeen(); }
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) touchLastSeen(); });
   showNotice();
   renderAll();
   loadSocial(); loadFoods(); claimGift(); startChat();
@@ -1526,8 +1538,9 @@ function renderTogether(){
   $('#myCode').textContent = S.me.code || '------';
   const social = !!S.uid;
   if(!social){ $('#friendList').innerHTML = `<div class="note">친구와 챌린지는 claude.ai에 로그인해서 열면 쓸 수 있어요.</div>`; $('#chalList').innerHTML = $('#friendList').innerHTML; return; }
-  const ids = Object.keys(S.friends).filter(id => S.friends[id] && S.profiles[id]);
+  const ids = Object.keys(S.friends).filter(id => S.friends[id] && S.profiles[id]).sort((a,b) => isOnline(b) - isOnline(a));
   $('#friendList').innerHTML = ids.length ? ids.map(friendCard).join('') : `<div class="card">${emptyArt('아직 친구가 없어요','아래 "냠냠핏 사람들"에서 바로 친구로 추가해 보세요')}</div>`;
+  renderMyStatus();
   renderPeople();
   renderChallenges();
   renderCheers();
@@ -1538,14 +1551,14 @@ function renderPeople(){
   const others = Object.entries(S.profiles).filter(([id,p]) => id!==S.uid && p?.nick);
   const notFriends = others.filter(([id]) => !S.friends[id]);
   const active = p => Math.max(+p.updatedAt||0, +p.createdAt||0);
-  const list = notFriends.sort((a,b) => (b[1].channel===S.me.channel) - (a[1].channel===S.me.channel) || active(b[1]) - active(a[1]));
+  const list = notFriends.sort((a,b) => isOnline(b[0]) - isOnline(a[0]) || (b[1].channel===S.me.channel) - (a[1].channel===S.me.channel) || active(b[1]) - active(a[1]));
   const shown = S.peopleAll ? list : list.slice(0, 20);
   box.innerHTML = `<div class="card-h"><h2>냠냠핏 사람들</h2><span class="tiny">가입한 사람 ${others.length}명</span></div>
     ${!others.length ? `<p class="small muted">아직 다른 사람이 없어요. 링크를 친구에게 보내 보세요!</p>`
     : !list.length ? `<p class="small muted">가입한 사람 모두와 친구예요 🎉</p>`
     : `<button class="btn ghost block" data-act="add-all-friends" style="margin-bottom:6px">${list.length}명 모두 친구 추가</button>
       <div class="list">${shown.map(([id,p]) => { const td = p.today?.date===todayKey() ? p.today : null, ch = CHANNELS[p.channel];
-        return `<div class="li"><span class="av sm">${esc(p.avatar||'🐰')}</span><div class="main"><div class="nm">${esc(p.nick)} ${p.channel===S.me.channel?'<span class="tag">같은 채널</span>':''}</div>
+        return `<div class="li">${avWrap(p, id, 'av sm')}<div class="main"><div class="nm">${esc(p.nick)} ${statusChip(id)} ${p.channel===S.me.channel?'<span class="tag">같은 채널</span>':''}</div><div>${onlineText(id)}</div>
           <div class="sub">${ch?esc(ch.name):''}${td?` · 오늘 🍗${td.pts} · ${td.kcal}kcal`:' · 오늘 기록 전'}${streakOf(p)?` · ${streakOf(p)}일 연속`:''}</div></div>
           <button class="btn sm plain" data-act="gift" data-id="${esc(id)}" aria-label="${esc(p.nick)}에게 덤벨 선물">🎁</button>
           <button class="btn sm" data-act="add-friend" data-id="${esc(id)}">친구 추가</button></div>`; }).join('')}</div>
@@ -1556,7 +1569,7 @@ function friendCard(id){
   const mw = weekPts(S.me), fw = weekPts(f), tot = Math.max(mw+fw, 1);
   const vs = S.vsOpen[id];
   return `<article class="card fr">
-    <div class="fr-top"><span class="av">${esc(f.avatar)}</span><div class="who"><b>${esc(f.nick)}</b><div class="tiny">${ch?ch.name:''} · ${streakOf(f)}일 연속 · 이번 주 🍗${fw}</div></div>
+    <div class="fr-top">${avWrap(f, id)}<div class="who"><b>${esc(f.nick)}</b> ${onlineText(id)} ${statusChip(id)}<div class="tiny">${ch?ch.name:''} · ${streakOf(f)}일 연속 · 이번 주 🍗${fw}</div></div>
       <button class="x-btn" data-act="unfriend" data-id="${esc(id)}" aria-label="친구 끊기">✕</button></div>
     <div class="mini-stats"><div><b>${td?td.kcal:0}</b>kcal</div><div><b>${td?td.p:0}g</b>단백질</div><div><b>${td?td.min:0}분</b>운동</div><div><b>${td?td.pts:0}</b>오늘 🍗</div></div>
     <div class="cheer-row">${CHEERS.map(([e,l])=>`<button data-act="cheer" data-id="${esc(id)}" data-e="${e}">${e} ${l}</button>`).join('')}<button class="gift-btn" data-act="gift" data-id="${esc(id)}">🎁 덤벨 선물</button><button data-act="vs" data-id="${esc(id)}" aria-expanded="${!!vs}" style="margin-left:auto;background:var(--accent-soft);border-color:var(--accent-soft);color:var(--accent-ink)">대결</button></div>
@@ -1667,6 +1680,7 @@ function setTab(t){
   $$('.nav button').forEach(b => { if(b.dataset.tab===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   ['home','coach','chan','rank','together','me'].forEach(v => $('#v-'+v).hidden = v!==t);
   if(t==='rank') renderRank();
+  if(t==='together' && S.me) renderTogether();
   window.scrollTo({top:0});
   renderCheers();
   if(t==='chan' && S.viewChan==='all') renderChat(true);
@@ -2385,8 +2399,8 @@ function startChat(){
     ch.on('broadcast', {event:'enter'}, ({payload}) => showEnter(payload))
       .on('postgres_changes', {event:'INSERT', schema:'public', table:'chat_messages'}, ({new:m}) => onChatMsg(m))
       .on('postgres_changes', {event:'DELETE', schema:'public', table:'chat_messages'}, ({old}) => { S.chat = S.chat.filter(x => x.id !== old.id); if(chatOpen()) renderChat(); })
-      .on('presence', {event:'sync'}, () => { S.online = Object.keys(ch.presenceState()).length; const o = $('#chatOnline'); if(o) o.innerHTML = `<span class="dot-live"></span>${S.online}명 접속 중`; })
-      .subscribe(async st => { if(st === 'SUBSCRIBED'){ S.chatLive = true; try { await ch.track({at:Date.now()}); } catch {} announceEntry(); } if(st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') S.chatLive = false; });
+      .on('presence', {event:'sync'}, () => onPresence(ch))
+      .subscribe(async st => { if(st === 'SUBSCRIBED'){ S.chatLive = true; try { await ch.track({at:Date.now(), status: S.me?.status?.v || null}); } catch {} announceEntry(); } if(st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') S.chatLive = false; });
     S.chatChannel = ch;
   } catch(e){ console.warn('realtime', e); }
   // Safety net if the live connection drops: refresh every 10s while the chat is open.
@@ -2427,6 +2441,51 @@ async function sendChat(e){
     onChatMsg(row);
   } catch(err){ inp.value = text; toast(/chat_messages|relation|schema/i.test(err?.message||'') ? '채팅이 아직 준비 중이에요 (관리자 설정 필요)' : '메시지를 보내지 못했어요. 인터넷 연결을 확인해 주세요.'); }
   inp.focus();
+}
+
+/* ---------- Online status (realtime presence) + my current activity ---------- */
+const STATUSES = {workout:['💪','운동중'], meal:['🍚','식사중'], rest:['🛋️','휴식중'], sleep:['😴','취침중']};
+S.onlineIds = new Set(); S.presenceStatus = {};
+const isOnline = id => id === S.uid || S.onlineIds.has(id);
+function statusOf(id){
+  if(S.onlineIds.has(id) && id !== S.uid) return S.presenceStatus[id] || null;
+  const st = S.profiles[id]?.status; return st?.v || null;
+}
+function avWrap(p, id, cls='av'){ return `<span class="avw"><span class="${cls}">${esc(p.avatar||'🐰')}</span><span class="ol ${isOnline(id)?'on':''}" title="${isOnline(id)?'접속중':'오프라인'}"></span></span>`; }
+function onlineText(id){
+  if(isOnline(id)) return '<span class="olt on">접속중</span>';
+  const t = +S.profiles[id]?.lastSeen || 0;
+  return `<span class="olt off">${t ? timeAgo(t)+' 접속' : '오프라인'}</span>`;
+}
+function statusChip(id){ const v = statusOf(id); return v && STATUSES[v] ? `<span class="stt ${v}">${STATUSES[v][0]} ${STATUSES[v][1]}</span>` : ''; }
+function renderMyStatus(){
+  const box = $('#myStatus'); if(!box || !S.me) return;
+  const cur = S.me.status?.v || null;
+  box.innerHTML = `<div class="card-h" style="margin-bottom:8px"><h2>내 상태</h2>${onlineText(S.uid)}</div>
+    <div class="chips">${Object.entries(STATUSES).map(([k,[e,l]]) => `<button class="chip" data-act="set-status" data-v="${k}" aria-pressed="${cur===k}">${e} ${l}</button>`).join('')}
+    ${cur?'<button class="chip" data-act="set-status" data-v="">상태 지우기</button>':''}</div>
+    <p class="tiny" style="margin-top:6px">고른 상태는 친구들과 다른 사람들에게 바로 보여요.</p>`;
+}
+function setStatus(v){
+  const p = {...S.me, status: v ? {v, at:Date.now()} : null};
+  store.saveProfile(p);
+  try { S.chatChannel?.track({at:Date.now(), status: v || null}); } catch {}
+  renderMyStatus(); renderTogether();
+  toast(v ? `상태를 '${STATUSES[v][1]}'(으)로 바꿨어요` : '상태를 지웠어요');
+}
+let presT = null;
+function onPresence(ch){
+  const st = ch.presenceState();
+  S.online = Object.keys(st).length;
+  S.onlineIds = new Set(Object.keys(st));
+  S.presenceStatus = Object.fromEntries(Object.entries(st).map(([k, arr]) => [k, (arr && arr[arr.length-1]?.status) || null]));
+  const o = $('#chatOnline'); if(o) o.innerHTML = `<span class="dot-live"></span>${S.online}명 접속 중`;
+  clearTimeout(presT); presT = setTimeout(() => { if(S.me) renderTogether(); }, 300);
+}
+function touchLastSeen(){
+  if(!S.me) return;
+  if(Date.now() - (+S.me.lastSeen||0) < 5*60000) return;
+  store.saveProfile({...S.me, lastSeen: Date.now()});
 }
 
 /* ---------- Login ---------- */
@@ -2547,6 +2606,7 @@ document.addEventListener('click', async e => {
     case 'admin-open': renderAdmin(); $('#adminSheet').hidden = false; break;
     case 'admin-refresh': loadSocial().then(renderAdmin); toast('새로 불러왔어요'); break;
     case 'admin-sort': S.admSort = b.dataset.v; renderAdmin(); break;
+    case 'set-status': setStatus(b.dataset.v || null); break;
     case 'add-all-friends': { const l = {...S.friends}; let n = 0; for(const id of Object.keys(S.profiles)) if(id!==S.uid && S.profiles[id]?.nick && !l[id]){ l[id] = true; n++; } store.saveFriends(l); toast(`${n}명과 친구가 됐어요!`); renderTogether(); break; }
     case 'people-more': S.peopleAll = true; renderPeople(); break;
     case 'add-friend': { const l = {...S.friends, [id]:true}; store.saveFriends(l); toast(`${S.profiles[id]?.nick} 님을 친구로 추가했어요`); $('#friendSearch').innerHTML=''; $('#friendIn').value=''; renderTogether(); break; }
