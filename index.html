@@ -524,9 +524,8 @@ textarea.input{min-height:96px;resize:vertical}
       <div class="hof-row" id="hofChans"></div>
     </div>
     <div class="seg" role="group" aria-label="랭킹 기준" id="rankMetric">
-      <button data-seg="rmetric" data-v="week" aria-pressed="true">이번 주 점수</button>
-      <button data-seg="rmetric" data-v="all" aria-pressed="false">누적 점수</button>
-      <button data-seg="rmetric" data-v="chicken" aria-pressed="false">🍗 이번 주</button>
+      <button data-seg="rmetric" data-v="week" aria-pressed="true">🍗 이번 주</button>
+      <button data-seg="rmetric" data-v="all" aria-pressed="false">🍗 누적</button>
     </div>
     <div style="overflow-x:auto;margin:0 -4px;padding:2px 4px"><div class="chips" id="rankScope" role="group" aria-label="랭킹 범위" style="flex-wrap:nowrap"></div></div>
     <section class="card">
@@ -534,15 +533,15 @@ textarea.input{min-height:96px;resize:vertical}
       <div id="rankList"></div>
     </section>
     <section class="card">
-      <h3 style="margin-bottom:8px">점수는 이렇게 쌓여요</h3>
+      <h3 style="margin-bottom:8px">🍗 닭가슴살은 이렇게 쌓여요</h3>
       <ul class="bul small muted">
-        <li>끼니 기록 1회 +5 (하루 최대 20)</li>
-        <li>운동 기록 +20, 30분 이상이면 +10 더</li>
-        <li>칼로리 목표 ±10% 안 +20</li>
-        <li>단백질 목표 90% 이상 +20</li>
-        <li>탄수·지방이 목표 범위 안 +10</li>
-        <li>챌린지 완료 보상 포인트는 누적 점수에 더해져요</li>
-        <li>🍗 하루 권장 칼로리 ±10% 안이면 닭가슴살 10개 · 매주 1등 메가커피 쿠폰</li>
+        <li>끼니 기록 1회 🍗+5 (하루 최대 20)</li>
+        <li>운동 기록 🍗+20, 30분 이상이면 🍗+10 더</li>
+        <li>권장 칼로리 ±10% 안 🍗+20</li>
+        <li>단백질 목표 90% 이상 🍗+20</li>
+        <li>탄수·지방이 목표 범위 안 🍗+10</li>
+        <li>챌린지 완료 보상 🍗도 누적에 더해져요</li>
+        <li>☕ 매주 이번 주 🍗 1등에게 메가커피 쿠폰</li>
         <li>👍 1~3등에게는 따봉을 보낼 수 있어요 (한 사람에게 주 1번)</li>
       </ul>
     </section>
@@ -792,7 +791,7 @@ textarea.input{min-height:96px;resize:vertical}
       <label class="f">무엇을 달성할까요?<select class="input" id="cMetric"></select></label>
       <div class="grid2">
         <label class="f"><span id="cTargetL">목표</span><input class="input" id="cTarget" type="number" min="1" required inputmode="numeric"></label>
-        <label class="f">보상 포인트<input class="input" id="cReward" type="number" min="10" max="1000" value="100" required inputmode="numeric"></label>
+        <label class="f">보상 🍗 개수<input class="input" id="cReward" type="number" min="10" max="1000" value="100" required inputmode="numeric"></label>
         <label class="f">시작일<input class="input" id="cStart" type="date" required></label>
         <label class="f">종료일<input class="input" id="cEnd" type="date" required></label>
       </div>
@@ -944,7 +943,7 @@ function macroOk(t, T, ch){
   if(ch==='keto') return t.c <= T.c && t.f >= T.f*0.7;
   return t.c >= T.c*0.7 && t.c <= T.c*1.15 && t.f >= T.f*0.6 && t.f <= T.f*1.2;
 }
-const weekChicken = p => { if(!p?.chickenDays) return 0; const m = mondayOf(todayKey()); let s = 0; for(let i=0;i<7;i++) s += +p.chickenDays[addDays(m,i)]||0; return s; };
+const weekChicken = p => weekPts(p);
 const kcalHit = (t, T) => t.meals > 0 && Math.abs(t.kcal - T.kcal) <= T.kcal*0.1;
 function dayPoints(d, T, ch){
   const t = dayTotals(d); if(!T) return 0;
@@ -1045,13 +1044,7 @@ function commitDay(d){
   p.lifetime = Math.max(0, (+p.lifetime||0) - old + nw);
   const cutoff = addDays(todayKey(), -60);
   for(const k of Object.keys(p.dayPts)) if(k < cutoff) delete p.dayPts[k];
-  // 🍗 10 chicken breasts for a day whose intake lands within ±10% of the calorie target.
-  p.chickenDays = {...(p.chickenDays||{})};
-  const tt = dayTotals(d), oldCh = +p.chickenDays[d.date] || 0, nwCh = !empty && kcalHit(tt, T) ? 10 : 0;
-  if(nwCh) p.chickenDays[d.date] = nwCh; else delete p.chickenDays[d.date];
-  p.chicken = Math.max(0, (+p.chicken||0) - oldCh + nwCh);
-  for(const k of Object.keys(p.chickenDays)) if(k < cutoff) delete p.chickenDays[k];
-  if(nwCh && !oldCh && d.date === todayKey()) setTimeout(() => { toast('🍗 권장 칼로리 달성! 닭가슴살 10개를 받았어요'); Snd.cheer(); }, 600);
+  if(d.date === todayKey() && nw > old) setTimeout(() => toast(`🍗 닭가슴살 +${nw - old}개! 오늘 ${nw}개 모았어요`), 1300);
   if(d.date === todayKey()){
     const t = dayTotals(d);
     p.today = {date:d.date, kcal:r0(t.kcal), c:r0(t.c), p:r0(t.p), f:r0(t.f), burn:r0(t.burn), min:t.min, meals:t.meals, pts:nw};
@@ -1404,8 +1397,8 @@ function renderChan(){
 /* ---------- Ranking tab ---------- */
 S.rankMetric = 'week'; S.rankScope = 'all'; S.likes = {};
 const weekId = () => mondayOf(todayKey());
-const metricOf = (p, m) => m==='chicken' ? weekChicken(p) : m==='all' ? totalPts(p) : weekPts(p);
-const metricUnit = m => m==='chicken' ? '🍗' : '점';
+const metricOf = (p, m) => m==='all' ? totalPts(p) : weekPts(p);
+const metricUnit = () => '🍗';
 function rankedList(scope, metric){
   return Object.entries(S.profiles).filter(([,p]) => p?.nick && (scope==='all' || p.channel===scope))
     .map(([id,p]) => ({id, p, v: metricOf(p, metric)})).sort((a,b) => b.v - a.v || (b.p.updatedAt||0) - (a.p.updatedAt||0));
@@ -1425,20 +1418,20 @@ function podium(top, metric, small){
 }
 function renderRank(){
   if(!S.me || !$('#v-rank')) return;
-  const m = S.rankMetric, label = {week:'이번 주 점수', all:'누적 점수', chicken:'이번 주 🍗'}[m];
+  const m = S.rankMetric, label = {week:'이번 주 🍗', all:'누적 🍗'}[m];
   $$('[data-seg="rmetric"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v===m));
   const all = rankedList('all', m);
   $('#hofAll').innerHTML = `<div class="card-h" style="margin-bottom:0"><h2>🏆 전체 TOP 3</h2><span class="tiny">${label}</span></div>
-    ${m==='chicken'?'<p class="tiny">☕ 이번 주 1등에게 메가커피 쿠폰!</p>':''}${podium(all.slice(0,3), m)}`;
+    ${m==='week'?'<p class="tiny">☕ 이번 주 1등에게 메가커피 쿠폰!</p>':''}${podium(all.slice(0,3), m)}`;
   $('#hofChans').innerHTML = Object.entries(CHANNELS).map(([k,c]) => `<div class="hof-card"><div style="display:flex;justify-content:space-between;align-items:center"><b>${c.name}</b><span class="tiny">${k===S.me.channel?'내 채널':''}</span></div>${podium(rankedList(k, m).slice(0,3), m, true)}</div>`).join('');
   $('#rankScope').innerHTML = [['all','전체'], ...Object.entries(CHANNELS).map(([k,c]) => [k, c.name + (k===S.me.channel?' · 내 채널':'')])]
     .map(([k,l]) => `<button class="chip" data-act="rank-scope" data-v="${k}" aria-pressed="${S.rankScope===k}" style="white-space:nowrap">${l}</button>`).join('');
   const sc = S.rankScope, list = rankedList(sc, m);
   $('#rankTitle').textContent = `${sc==='all'?'전체':CHANNELS[sc].name} 랭킹`;
   $('#rankSub').textContent = label + (m==='all' ? '' : ` · ${shortDate(weekId())}~${shortDate(addDays(weekId(),6))}`);
-  if(!list.length){ $('#rankList').innerHTML = emptyArt('아직 랭킹이 없어요','기록을 시작하면 점수가 쌓여요'); return; }
+  if(!list.length){ $('#rankList').innerHTML = emptyArt('아직 랭킹이 없어요','기록을 시작하면 🍗 닭가슴살이 쌓여요'); return; }
   const myIdx = list.findIndex(x => x.id===S.uid), shown = list.slice(0, 50);
-  $('#rankList').innerHTML = shown.map((x,i) => rankRow(x, i, m==='chicken')).join('') + (myIdx >= 50 ? `<div class="tiny" style="text-align:center">⋯</div>${rankRow(list[myIdx], myIdx, m==='chicken')}` : '');
+  $('#rankList').innerHTML = shown.map((x,i) => rankRow(x, i, m==='week')).join('') + (myIdx >= 50 ? `<div class="tiny" style="text-align:center">⋯</div>${rankRow(list[myIdx], myIdx, m==='week')}` : '');
 }
 async function loadLikes(){
   try {
@@ -1485,8 +1478,8 @@ function showEnter(p){
 }
 function rankRow(x, i, chick){
   const st = streakOf(x.p);
-  if(chick) return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${i===0&&x.v>0?'☕ 메가커피 쿠폰 · ':''}누적 ${(+x.p.chicken||0).toLocaleString()}🍗${x.p.chickenDays?.[todayKey()]?' · 오늘 +10🍗':''}</span></span><span class="pts">${x.v.toLocaleString()}🍗</span></div>`;
-  return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${esc(CHANNELS[x.p.channel]?.name||'')}${st?` · ${st}일 연속`:''} · 오늘 ${x.p.today?.date===todayKey()?x.p.today.pts:0}점${likeInfo(x.id).count?` · 👍${likeInfo(x.id).count}`:''}</span></span><span class="pts">${x.v.toLocaleString()}</span></div>`;
+  const td = x.p.today?.date===todayKey() ? x.p.today.pts : 0, li = likeInfo(x.id).count;
+  return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${chick&&i===0&&x.v>0?'☕ 메가커피 쿠폰 · ':''}${esc(CHANNELS[x.p.channel]?.name||'')}${st?` · ${st}일 연속`:''}${td?` · 오늘 +${td}🍗`:''}${li?` · 👍${li}`:''}</span></span><span class="pts">${x.v.toLocaleString()}🍗</span></div>`;
 }
 function postHtml(p){
   const a = S.profiles[p.uid] || {nick:'알 수 없음', avatar:'🐣'};
@@ -1534,7 +1527,7 @@ function renderPeople(){
     : `<button class="btn ghost block" data-act="add-all-friends" style="margin-bottom:6px">${list.length}명 모두 친구 추가</button>
       <div class="list">${shown.map(([id,p]) => { const td = p.today?.date===todayKey() ? p.today : null, ch = CHANNELS[p.channel];
         return `<div class="li"><span class="av sm">${esc(p.avatar||'🐰')}</span><div class="main"><div class="nm">${esc(p.nick)} ${p.channel===S.me.channel?'<span class="tag">같은 채널</span>':''}</div>
-          <div class="sub">${ch?esc(ch.name):''}${td?` · 오늘 ${td.pts}점 · ${td.kcal}kcal`:' · 오늘 기록 전'}${streakOf(p)?` · ${streakOf(p)}일 연속`:''}</div></div>
+          <div class="sub">${ch?esc(ch.name):''}${td?` · 오늘 🍗${td.pts} · ${td.kcal}kcal`:' · 오늘 기록 전'}${streakOf(p)?` · ${streakOf(p)}일 연속`:''}</div></div>
           <button class="btn sm plain" data-act="gift" data-id="${esc(id)}" aria-label="${esc(p.nick)}에게 덤벨 선물">🎁</button>
           <button class="btn sm" data-act="add-friend" data-id="${esc(id)}">친구 추가</button></div>`; }).join('')}</div>
       ${list.length > shown.length ? `<button class="btn plain sm" data-act="people-more" style="margin-top:8px">${list.length - shown.length}명 더 보기</button>` : ''}`}`;
@@ -1544,14 +1537,14 @@ function friendCard(id){
   const mw = weekPts(S.me), fw = weekPts(f), tot = Math.max(mw+fw, 1);
   const vs = S.vsOpen[id];
   return `<article class="card fr">
-    <div class="fr-top"><span class="av">${esc(f.avatar)}</span><div class="who"><b>${esc(f.nick)}</b><div class="tiny">${ch?ch.name:''} · ${streakOf(f)}일 연속 · 이번 주 ${fw}점</div></div>
+    <div class="fr-top"><span class="av">${esc(f.avatar)}</span><div class="who"><b>${esc(f.nick)}</b><div class="tiny">${ch?ch.name:''} · ${streakOf(f)}일 연속 · 이번 주 🍗${fw}</div></div>
       <button class="x-btn" data-act="unfriend" data-id="${esc(id)}" aria-label="친구 끊기">✕</button></div>
-    <div class="mini-stats"><div><b>${td?td.kcal:0}</b>kcal</div><div><b>${td?td.p:0}g</b>단백질</div><div><b>${td?td.min:0}분</b>운동</div><div><b>${td?td.pts:0}</b>오늘 점수</div></div>
+    <div class="mini-stats"><div><b>${td?td.kcal:0}</b>kcal</div><div><b>${td?td.p:0}g</b>단백질</div><div><b>${td?td.min:0}분</b>운동</div><div><b>${td?td.pts:0}</b>오늘 🍗</div></div>
     <div class="cheer-row">${CHEERS.map(([e,l])=>`<button data-act="cheer" data-id="${esc(id)}" data-e="${e}">${e} ${l}</button>`).join('')}<button class="gift-btn" data-act="gift" data-id="${esc(id)}">🎁 덤벨 선물</button><button data-act="vs" data-id="${esc(id)}" aria-expanded="${!!vs}" style="margin-left:auto;background:var(--accent-soft);border-color:var(--accent-soft);color:var(--accent-ink)">대결</button></div>
     ${vs?`<div class="stack" style="gap:8px;padding-top:4px">
       <div class="vs"><div class="side"><span class="tiny">나</span><b style="color:var(--accent-ink)">${mw}</b></div><div class="mid">VS</div><div class="side"><span class="tiny">${esc(f.nick)}</span><b style="color:var(--prot)">${fw}</b></div></div>
       <div class="vsbar"><i style="width:${mw/tot*100}%;background:var(--accent)"></i><i style="width:${fw/tot*100}%;background:var(--prot)"></i></div>
-      <p class="small" style="text-align:center">${mw===fw?'이번 주 동점이에요!':mw>fw?`이번 주 ${mw-fw}점 앞서고 있어요`:`${fw-mw}점 차이! 오늘 기록으로 따라잡아요`}</p>
+      <p class="small" style="text-align:center">${mw===fw?'이번 주 🍗 동점이에요!':mw>fw?`이번 주 🍗 ${mw-fw}개 앞서고 있어요`:`🍗 ${fw-mw}개 차이! 오늘 기록으로 따라잡아요`}</p>
       ${vsRows(S.me.today?.date===todayKey()?S.me.today:null, td)}</div>`:''}
   </article>`;
 }
@@ -1610,13 +1603,13 @@ function renderChallenges(){
     return `<article class="card ch">
       <div class="ch-h"><span class="bd">${esc(c.badge||'🏆')}</span><div class="ti"><b>${esc(c.title)}</b><span class="tiny">${creator?esc(creator.nick)+' 님이 만듦':''}${c.desc?' · '+esc(c.desc):''}</span></div>
       ${c.creator===S.uid?`<button class="x-btn" data-act="del-chal" data-id="${esc(c.id)}" aria-label="챌린지 삭제">✕</button>`:''}</div>
-      <div class="ch-meta"><span>${esc(m.name)} ${c.target}${m.unit}</span><span>${shortDate(c.start)}–${shortDate(c.end)}</span><span style="background:${status==='종료'?'var(--soft)':'var(--accent-soft)'};color:${status==='종료'?'var(--ink3)':'var(--accent-ink)'}">${status}</span><span style="background:var(--carb-soft);color:#875900">보상 ${c.reward}P</span></div>
+      <div class="ch-meta"><span>${esc(m.name)} ${c.target}${m.unit}</span><span>${shortDate(c.start)}–${shortDate(c.end)}</span><span style="background:${status==='종료'?'var(--soft)':'var(--accent-soft)'};color:${status==='종료'?'var(--ink3)':'var(--accent-ink)'}">${status}</span><span style="background:var(--carb-soft);color:#875900">보상 🍗${c.reward}</span></div>
       ${invited?`<div class="note pink small">초대받은 챌린지예요!</div>`:''}
       <div class="stack" style="gap:6px">${mems.length?mems.map(x=>{const u=S.profiles[x.id]||{nick:'?',avatar:'🐣'}; const w=Math.min(x.v/c.target*100,100); return `<div class="prog"><span class="av sm" title="${esc(u.nick)}">${esc(u.avatar)}</span><div><div class="small" style="font-weight:700">${esc(u.nick)}${x.id===S.uid?' (나)':''}</div><div class="bar"><i style="width:${w}%;background:${x.v>=c.target?'var(--good)':'var(--accent)'}"></i></div></div><span class="num" style="text-align:right">${x.v}/${c.target}</span></div>`;}).join(''):'<span class="tiny">아직 참여자가 없어요</span>'}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${!joined && t<=c.end ? `<button class="btn sm" data-act="join-chal" data-id="${esc(c.id)}">참여하기</button>` : ''}
         ${joined && !done && t<=c.end ? `<button class="btn sm plain" data-act="leave-chal" data-id="${esc(c.id)}">나가기</button>` : ''}
-        ${done && !claimed ? `<button class="btn sm" data-act="claim" data-id="${esc(c.id)}" style="background:var(--good);box-shadow:0 3px 0 #0E7A51">보상 받기 +${c.reward}P ${esc(c.badge||'')}</button>` : ''}
+        ${done && !claimed ? `<button class="btn sm" data-act="claim" data-id="${esc(c.id)}" style="background:var(--good);box-shadow:0 3px 0 #0E7A51">보상 받기 🍗+${c.reward} ${esc(c.badge||'')}</button>` : ''}
         ${claimed ? `<span class="state ok">보상 받음 ✓</span>` : ''}
       </div>
     </article>`;
@@ -1627,8 +1620,8 @@ function renderChallenges(){
 function renderMe(){
   const p = S.me, T = targetsFor(p), ch = CHANNELS[p.channel];
   $('#meCard').innerHTML = `<div class="fr-top"><span class="av" style="width:56px;height:56px;font-size:1.9rem">${esc(p.avatar)}</span><div class="who"><h2>${esc(p.nick)}</h2><span class="small muted">${ch.group} · ${ch.name} · ${p.sex==='f'?'여':'남'} ${p.age}세 · ${p.height}cm · ${p.weight}kg${p.targetWeight?` → ${p.targetWeight}kg`:''}</span></div></div>
-    <div class="mini-stats" style="margin-top:12px"><div><b>${totalPts(p)}</b>누적 점수</div><div><b>${weekPts(p)}</b>이번 주</div><div><b>${streakOf(p)}일</b>연속 기록</div><div><b>${(p.badges||[]).length}</b>배지</div></div>
-    <div class="mini-stats" style="margin-top:6px;grid-template-columns:repeat(3,1fr)"><div><b>${(+p.chicken||0).toLocaleString()}</b>🍗 닭가슴살</div><div><b>${S.wallet?(+S.wallet.dumbbells).toLocaleString():'–'}</b>덤벨</div><div><b>${S.wallet?(+S.wallet.received).toLocaleString():'–'}</b>받은 덤벨</div></div>
+    <div class="mini-stats" style="margin-top:12px"><div><b>${totalPts(p)}</b>누적 🍗</div><div><b>${weekPts(p)}</b>이번 주 🍗</div><div><b>${streakOf(p)}일</b>연속 기록</div><div><b>${(p.badges||[]).length}</b>배지</div></div>
+    <div class="mini-stats" style="margin-top:6px;grid-template-columns:repeat(3,1fr)"><div><b>${S.wallet?(+S.wallet.dumbbells).toLocaleString():'–'}</b>덤벨</div><div><b>${likeInfo(S.uid).count}</b>받은 👍</div><div><b>${S.wallet?(+S.wallet.received).toLocaleString():'–'}</b>받은 덤벨</div></div>
     <button class="btn block ghost" style="margin-top:12px" data-act="edit-profile" data-step="me">프로필·목표 수정</button>`;
   $('#targetBox').innerHTML = `<div class="mini-stats"><div><b>${T.kcal}</b>kcal</div><div><b style="color:var(--carb)">${T.c}g</b>탄수화물</div><div><b style="color:var(--prot)">${T.p}g</b>단백질</div><div><b style="color:var(--fat)">${T.f}g</b>지방</div></div>
     <p class="tiny" style="margin-top:8px">기초대사량 ${T.bmr} kcal · 생활 소모 ${T.tdee} kcal · ${ch.name} 기준 ${ch.kcal>0?'+':''}${ch.kcal} kcal${ch.keto?` · 탄수 ${ch.carbG}g 고정`:''} · 단백질 체중×${ch.p}g</p>`;
@@ -2222,14 +2215,14 @@ async function claimGift(){
 }
 function renderReward(){
   const box = $('#rewardCard'); if(!box || !S.me) return;
-  const T = targetsFor(S.me), t = dayTotals(S.days[todayKey()]), hit = !!S.me.chickenDays?.[todayKey()];
+  const T = targetsFor(S.me), t = dayTotals(S.days[todayKey()]), hit = kcalHit(t, T), todayCh = +S.me.dayPts?.[todayKey()] || 0;
   const left = T.kcal - t.kcal;
-  const status = hit ? '오늘 닭가슴살 10개 획득! 이대로 유지해요'
-    : !t.meals ? `오늘 ${r0(T.kcal*0.9)}~${r0(T.kcal*1.1)}kcal 먹으면 🍗 10개`
-    : left > 0 ? `${r0(left - T.kcal*0.1)}kcal 더 먹으면 🍗 10개` : `목표보다 ${r0(-left - T.kcal*0.1)}kcal 초과했어요`;
+  const status = (todayCh ? `오늘 🍗 ${todayCh}개 모았어요. ` : '') + (hit ? '권장 칼로리 달성 중! 이대로 유지해요'
+    : !t.meals ? `${r0(T.kcal*0.9)}~${r0(T.kcal*1.1)}kcal 먹으면 🍗+20`
+    : left > 0 ? `${r0(left - T.kcal*0.1)}kcal 더 먹으면 🍗+20` : `권장 칼로리보다 ${r0(-left - T.kcal*0.1)}kcal 초과했어요`);
   box.innerHTML = `<div class="card-h" style="margin-bottom:10px"><h2>내 보상</h2><button class="btn sm ghost" data-act="go-chicken-rank">🍗 랭킹</button></div>
     <div class="reward">
-      <div class="rw ch"><span class="ic">🍗</span><div style="min-width:0"><b>${(+S.me.chicken||0).toLocaleString()}</b><small>닭가슴살</small></div></div>
+      <div class="rw ch"><span class="ic">🍗</span><div style="min-width:0"><b>${totalPts(S.me).toLocaleString()}</b><small>닭가슴살 · 이번 주 ${weekPts(S.me)}</small></div></div>
       <div class="rw db"><span class="ic">${DUMB(32)}</span><div style="min-width:0"><b>${S.wallet ? (+S.wallet.dumbbells).toLocaleString() : '–'}</b><small>덤벨</small></div></div>
     </div>
     <p class="small" style="margin-top:10px">${hit?'✅':'🎯'} ${status}</p>
@@ -2332,7 +2325,7 @@ function renderAdmin(){
   const days7 = Array.from({length:7}, (_,i) => addDays(today, i-6));
   const joins = days7.map(k => users.filter(u => u.joined && keyOf(new Date(u.joined))===k).length), maxJ = Math.max(1, ...joins);
   const top = [...users].sort((a,b) => b.wch - a.wch)[0];
-  const sorters = {active:(a,b)=>b.active-a.active, joined:(a,b)=>b.joined-a.joined, week:(a,b)=>b.week-a.week, wch:(a,b)=>b.wch-a.wch, streak:(a,b)=>b.streak-a.streak, name:(a,b)=>a.p.nick.localeCompare(b.p.nick,'ko')};
+  const sorters = {active:(a,b)=>b.active-a.active, joined:(a,b)=>b.joined-a.joined, week:(a,b)=>b.week-a.week, all:(a,b)=>totalPts(b.p)-totalPts(a.p), wch:(a,b)=>b.wch-a.wch, streak:(a,b)=>b.streak-a.streak, name:(a,b)=>a.p.nick.localeCompare(b.p.nick,'ko')};
   const list = [...users].sort(sorters[S.admSort] || sorters.active);
   const fmt = t => t ? `${shortDate(keyOf(new Date(t)))} ${String(new Date(t).getHours()).padStart(2,'0')}:${String(new Date(t).getMinutes()).padStart(2,'0')}` : '–';
   const th = (k, l) => `<th data-act="admin-sort" data-v="${k}" aria-sort="${S.admSort===k?'descending':'none'}">${l}${S.admSort===k?' ▾':''}</th>`;
@@ -2351,8 +2344,8 @@ function renderAdmin(){
     <div class="card"><h3 style="margin-bottom:8px">채널별 인원</h3>
       ${Object.entries(CHANNELS).map(([k,c]) => { const m = users.filter(u => u.p.channel===k).length; return `<div class="mrow" style="margin-bottom:8px"><div class="top-l"><span class="name">${c.name}</span><span class="num">${m}명</span></div><div class="bar"><i style="width:${n?m/n*100:0}%;background:${c.color}"></i></div></div>`; }).join('')}</div>
     <div><h3 style="margin-bottom:8px">사용자 목록 <span class="tiny">(제목을 누르면 정렬)</span></h3>
-      <div class="adm-table"><table><thead><tr>${th('name','이름')}<th>채널</th>${th('joined','가입')}${th('active','마지막 활동')}<th>오늘</th>${th('streak','연속')}${th('week','주간 점수')}${th('wch','주간 🍗')}<th>누적 🍗</th><th>체중</th></tr></thead>
-      <tbody>${list.map(u => `<tr><td><b>${esc(u.p.nick)}</b>${u.id===S.uid?' (나)':''}</td><td>${esc(CHANNELS[u.p.channel]?.name||'')}</td><td>${u.joined?shortDate(keyOf(new Date(u.joined))):'–'}</td><td>${fmt(u.active)}</td><td>${u.todayRec?`✅ ${u.p.today.kcal}kcal`:'–'}</td><td class="n">${u.streak}일</td><td class="n">${u.week}</td><td class="n">${u.wch}</td><td class="n">${+u.p.chicken||0}</td><td class="n">${u.p.weight||'–'}</td></tr>`).join('')}</tbody></table></div></div>
+      <div class="adm-table"><table><thead><tr>${th('name','이름')}<th>채널</th>${th('joined','가입')}${th('active','마지막 활동')}<th>오늘</th>${th('streak','연속')}${th('week','이번 주 🍗')}${th('all','누적 🍗')}<th>체중</th></tr></thead>
+      <tbody>${list.map(u => `<tr><td><b>${esc(u.p.nick)}</b>${u.id===S.uid?' (나)':''}</td><td>${esc(CHANNELS[u.p.channel]?.name||'')}</td><td>${u.joined?shortDate(keyOf(new Date(u.joined))):'–'}</td><td>${fmt(u.active)}</td><td>${u.todayRec?`✅ ${u.p.today.kcal}kcal`:'–'}</td><td class="n">${u.streak}일</td><td class="n">${u.week}</td><td class="n">${totalPts(u.p)}</td><td class="n">${u.p.weight||'–'}</td></tr>`).join('')}</tbody></table></div></div>
     <p class="tiny">이메일·로그인 기록은 Supabase 대시보드 → Authentication → Users에서 볼 수 있어요. 식단 상세는 개인정보라 본인만 볼 수 있어요.</p>`;
 }
 
@@ -2521,7 +2514,7 @@ document.addEventListener('click', async e => {
     case 'gift-amt': S.gift.amount = +b.dataset.v; drawGift(); break;
     case 'gift-emoji': S.gift.emoji = b.dataset.v; drawGift(); break;
     case 'gift-send': sendGift(); break;
-    case 'go-chicken-rank': S.rankMetric = 'chicken'; S.rankScope = 'all'; setTab('rank'); break;
+    case 'go-chicken-rank': S.rankMetric = 'week'; S.rankScope = 'all'; setTab('rank'); break;
     case 'rank-scope': S.rankScope = b.dataset.v; renderRank(); break;
     case 'thumb': toggleThumb(id); break;
     case 'change-goal': openOnboarding(false, 'goal'); break;
@@ -2550,7 +2543,7 @@ document.addEventListener('click', async e => {
     case 'claim': {
       const c = S.challenges.find(x=>x.id===id); if(!c || S.me.claimed?.[id]) break;
       const p = {...S.me, bonus:(+S.me.bonus||0)+c.reward, badges:[...(S.me.badges||[]), {emoji:c.badge||'🏆', title:c.title, at:Date.now()}], claimed:{...(S.me.claimed||{}), [id]:true}};
-      store.saveProfile(p); toast(`${c.badge} 배지와 ${c.reward}P를 받았어요!`); renderAll(); break;
+      store.saveProfile(p); toast(`${c.badge} 배지와 닭가슴살 ${c.reward}개를 받았어요!`); renderAll(); break;
     }
     case 'reset-me': confirmDo('내 기록을 모두 지울까요?', '식단·운동·체중 기록과 점수가 모두 삭제돼요. 프로필과 루틴은 남아요.', async () => {
       for(const k of Object.keys(S.days)) store.deleteDay(k);
