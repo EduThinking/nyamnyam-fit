@@ -186,12 +186,12 @@ textarea.input{min-height:96px;resize:vertical}
 
 /* Bottom nav */
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:25;background:#fff;border-top:1.5px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-.nav-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.nav-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr)}
 .nav button{border:0;background:none;padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.78rem;font-weight:700;color:var(--ink3);position:relative}
 .nav button svg{width:26px;height:26px}
 .nav button[aria-current="page"]{color:var(--accent-ink)}
 .nav button[aria-current="page"] .nb{background:var(--accent-soft)}
-.nav .nb{width:48px;height:30px;border-radius:999px;display:grid;place-items:center}
+.nav .nb{width:44px;height:30px;border-radius:999px;display:grid;place-items:center}
 .badge-dot{position:absolute;top:6px;right:calc(50% - 22px);background:var(--accent);color:#fff;border-radius:999px;font-size:.66rem;min-width:18px;height:18px;display:grid;place-items:center;padding:0 4px}
 
 /* Sheets */
@@ -376,6 +376,32 @@ textarea.input{min-height:96px;resize:vertical}
 .chat-form{display:flex;gap:8px;padding:10px 12px;border-top:1.5px solid var(--line);background:var(--card)}
 .chat-form input{flex:1;min-width:0}
 .dot-live{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:6px;box-shadow:0 0 0 3px #DDF6EE}
+.hof{background:linear-gradient(180deg,#FFF6DA 0%,#fff 70%);border-color:#FFE7A8}
+.hof h2{display:flex;align-items:center;gap:8px}
+.pod{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:8px;align-items:end;margin-top:12px}
+.pod .p{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0}
+.pod .crown{font-size:1.5rem;line-height:1;height:26px}
+.pod .ava{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font-size:1.9rem;background:#fff;border:3px solid var(--line)}
+.pod .p1 .ava{width:76px;height:76px;font-size:2.5rem;border-color:#F5C842}
+.pod .p2 .ava{border-color:#B8C2CF}.pod .p3 .ava{border-color:#D79A64}
+.pod .nm{font-weight:700;margin-top:6px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pod .sc{font-family:var(--f-display);font-size:1.15rem}
+.pod .step{width:100%;border-radius:12px 12px 4px 4px;margin-top:6px;display:grid;place-items:center;font-family:var(--f-display);color:#fff;font-size:1.3rem}
+.pod .p1 .step{height:70px;background:#F5B700}.pod .p2 .step{height:50px;background:#9AA6B6}.pod .p3 .step{height:38px;background:#C98448}
+.thumb-btn{margin-top:6px;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-weight:700;font-size:.85rem;display:inline-flex;gap:4px;align-items:center}
+.thumb-btn[aria-pressed="true"]{background:var(--prot);border-color:var(--prot);color:#fff}
+.thumb-btn:disabled{opacity:.6}
+.hof-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
+.hof-card{flex:0 0 78%;max-width:300px;scroll-snap-align:start;background:var(--card);border:1.5px solid var(--line);border-radius:var(--r-lg);padding:14px;box-shadow:var(--shadow)}
+.hof-card .pod{grid-template-columns:1fr 1fr 1fr;margin-top:6px}
+.hof-card .ava{width:44px;height:44px;font-size:1.4rem}
+.hof-card .p1 .ava{width:54px;height:54px;font-size:1.7rem}
+.hof-card .step{font-size:1rem}.hof-card .p1 .step{height:44px}.hof-card .p2 .step{height:32px}.hof-card .p3 .step{height:24px}
+.hof-card .nm{font-size:.82rem}.hof-card .sc{font-size:.95rem}
+.enter-banner{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:65;width:min(520px,calc(100% - 24px));background:linear-gradient(90deg,#FFE38A,#FFC9DA);color:var(--ink);border:2px solid #F5B700;border-radius:18px;padding:12px 16px;font-weight:700;box-shadow:0 10px 30px rgba(214,58,108,.25);display:flex;gap:10px;align-items:center;animation:drop .5s ease-out}
+.enter-banner .big{font-size:1.8rem}
+@keyframes drop{from{transform:translate(-50%,-30px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+@media (prefers-reduced-motion:reduce){.enter-banner{animation:none}}
 .toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-weight:600;font-size:.92rem;max-width:calc(100% - 32px);text-align:center}
 
 .banner{margin-bottom:12px}
@@ -470,10 +496,6 @@ textarea.input{min-height:96px;resize:vertical}
       <div class="chat-list" id="chatList" aria-live="polite"></div>
       <form class="chat-form" id="chatForm"><input class="input" id="chatIn" maxlength="500" placeholder="메시지 보내기" autocomplete="off" enterkeyhint="send"><button class="btn" type="submit" id="chatSend">보내기</button></form>
     </section>
-    <div class="seg" role="group" aria-label="채널 보기" id="chanSeg">
-      <button data-seg="chan" data-v="feed" aria-pressed="true">커뮤니티</button>
-      <button data-seg="chan" data-v="rank" aria-pressed="false">랭킹</button>
-    </div>
     <div id="chanFeed" class="stack">
       <section class="card">
         <form id="postForm" class="stack" style="gap:10px">
@@ -492,25 +514,38 @@ textarea.input{min-height:96px;resize:vertical}
       </section>
       <div id="postList" class="stack"></div>
     </div>
-    <div id="chanRank" class="stack" hidden>
-      <section class="card">
-        <div class="card-h"><h2 id="rankTitle">채널 랭킹</h2>
-          <div class="seg" style="min-width:150px"><button data-seg="rank" data-v="week" aria-pressed="true">이번 주</button><button data-seg="rank" data-v="all" aria-pressed="false">누적</button><button data-seg="rank" data-v="chicken" aria-pressed="false">🍗</button></div>
-        </div>
-        <div id="rankList"></div>
-      </section>
-      <section class="card">
-        <h3 style="margin-bottom:8px">점수는 이렇게 쌓여요</h3>
-        <ul class="bul small muted">
-          <li>끼니 기록 1회 +5 (하루 최대 20)</li>
-          <li>운동 기록 +20, 30분 이상이면 +10 더</li>
-          <li>칼로리 목표 ±10% 안 +20</li>
-          <li>단백질 목표 90% 이상 +20</li>
-          <li>탄수·지방이 목표 범위 안 +10</li>
-          <li>챌린지 완료 보상 포인트는 누적 점수에 더해져요</li>
-        </ul>
-      </section>
+  </main>
+
+  <!-- RANKING -->
+  <main id="v-rank" class="stack" hidden>
+    <section class="card hof" id="hofAll"></section>
+    <div>
+      <div class="section-label" style="margin:0 2px 8px">채널별 TOP 3</div>
+      <div class="hof-row" id="hofChans"></div>
     </div>
+    <div class="seg" role="group" aria-label="랭킹 기준" id="rankMetric">
+      <button data-seg="rmetric" data-v="week" aria-pressed="true">이번 주 점수</button>
+      <button data-seg="rmetric" data-v="all" aria-pressed="false">누적 점수</button>
+      <button data-seg="rmetric" data-v="chicken" aria-pressed="false">🍗 이번 주</button>
+    </div>
+    <div style="overflow-x:auto;margin:0 -4px;padding:2px 4px"><div class="chips" id="rankScope" role="group" aria-label="랭킹 범위" style="flex-wrap:nowrap"></div></div>
+    <section class="card">
+      <div class="card-h"><h2 id="rankTitle">전체 랭킹</h2><span class="tiny" id="rankSub"></span></div>
+      <div id="rankList"></div>
+    </section>
+    <section class="card">
+      <h3 style="margin-bottom:8px">점수는 이렇게 쌓여요</h3>
+      <ul class="bul small muted">
+        <li>끼니 기록 1회 +5 (하루 최대 20)</li>
+        <li>운동 기록 +20, 30분 이상이면 +10 더</li>
+        <li>칼로리 목표 ±10% 안 +20</li>
+        <li>단백질 목표 90% 이상 +20</li>
+        <li>탄수·지방이 목표 범위 안 +10</li>
+        <li>챌린지 완료 보상 포인트는 누적 점수에 더해져요</li>
+        <li>🍗 하루 권장 칼로리 ±10% 안이면 닭가슴살 10개 · 매주 1등 메가커피 쿠폰</li>
+        <li>👍 1~3등에게는 따봉을 보낼 수 있어요 (한 사람에게 주 1번)</li>
+      </ul>
+    </section>
   </main>
 
   <!-- TOGETHER -->
@@ -573,9 +608,10 @@ textarea.input{min-height:96px;resize:vertical}
 <nav class="nav" aria-label="메뉴">
   <div class="nav-in">
     <button data-tab="home" aria-current="page"><span class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg></span>오늘</button>
-    <button data-tab="coach"><span class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19l5-6 4 3 7-9"/><path d="M15 7h5v5"/></svg></span>분석·추천</button>
+    <button data-tab="coach"><span class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19l5-6 4 3 7-9"/><path d="M15 7h5v5"/></svg></span>분석</button>
     <button data-tab="chan"><span class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>채널<span class="badge-dot" id="chatDot" hidden>0</span></button>
-    <button data-tab="together"><span class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 19c0-3 2.5-5 5-5s5 2 5 5M14 19c0-2.5 1.5-4 3-4s4 1.5 4 4"/></svg></span>친구·챌린지<span class="badge-dot" id="cheerDot" hidden>0</span></button>
+    <button data-tab="rank"><span class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg></span>랭킹</button>
+    <button data-tab="together"><span class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 19c0-3 2.5-5 5-5s5 2 5 5M14 19c0-2.5 1.5-4 3-4s4 1.5 4 4"/></svg></span>친구<span class="badge-dot" id="cheerDot" hidden>0</span></button>
     <button data-tab="me"><span class="nb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>내 정보</button>
   </div>
 </nav>
@@ -807,6 +843,7 @@ textarea.input{min-height:96px;resize:vertical}
   </div>
 </div>
 <div class="lightbox" id="lightbox" hidden data-act="lightbox-close"><img id="lightboxImg" alt="첨부 사진 크게 보기"></div>
+<div class="enter-banner" id="enterBanner" hidden role="status" aria-live="polite"></div>
 <div class="toast" id="toast" hidden></div>
 
 <script src="/vendor/supabase.js"></script>
@@ -1101,7 +1138,9 @@ async function loadSocial(){
     const cById = Object.fromEntries(S.challenges.map(c => [c.id, c]));
     mems.forEach(m => { const c = cById[m.challenge_id]; if(c){ c.members[m.user_id] = m.active; c.progress[m.user_id] = m.progress; } });
     S.cheers = cheers.map(c => ({id:c.id, from:c.from_id, to:c.to_id, emoji:c.emoji, at:c.at, amount:+c.amount||0}));
-    renderAll(); syncChallengeProgress();
+    await loadLikes();
+    S.socialLoaded = true;
+    renderAll(); syncChallengeProgress(); announceEntry();
   } catch(e){ console.warn('social load failed', e); }
   finally { socialBusy = false; }
 }
@@ -1128,7 +1167,7 @@ function renderAll(){
   if(!S.me){ return; }
   const ch = CHANNELS[S.me.channel];
   const cp = $('#chanPill'); cp.hidden = !ch; if(ch) cp.textContent = ch.name + ' 채널';
-  renderHome(); renderCoach(); renderChan(); renderTogether(); renderMe();
+  renderHome(); renderCoach(); renderChan(); renderRank(); renderTogether(); renderMe();
 }
 const stateTag = (v, T, kind) => {
   if(!T) return '';
@@ -1352,31 +1391,102 @@ function renderChan(){
   const unread = S.chatUnread || 0;
   $('#chanChips').innerHTML = `<button class="chip" data-act="view-chan" data-v="all" aria-pressed="${vc==='all'}" style="white-space:nowrap">💬 전체 채팅${unread && vc!=='all'?` <b style="color:var(--accent-ink)">${unread}</b>`:''}</button>` + Object.entries(CHANNELS).map(([k,c]) => `<button class="chip" data-act="view-chan" data-v="${k}" aria-pressed="${vc===k}" style="white-space:nowrap">${c.name}${k===S.me.channel?' · 내 채널':''} <span style="opacity:.7">${members(k)}</span></button>`).join('');
   const chat = vc==='all';
-  $('#chatView').hidden = !chat; $('#chanSeg').hidden = chat;
-  if(chat){ $('#chanFeed').hidden = true; $('#chanRank').hidden = true; renderChat(); return; }
+  $('#chatView').hidden = !chat;
+  if(chat){ $('#chanFeed').hidden = true; renderChat(); return; }
   const social = !!S.uid;
   $('#postLabel').textContent = vc===S.me.channel ? `${ch.name} 채널에 이야기 남기기` : `${ch.name} 채널에 놀러 왔어요 · 이야기 남기기`;
-  $('#rankTitle').textContent = `${ch.name} 랭킹`;
-  $('#chanFeed').hidden = S.seg.chan!=='feed'; $('#chanRank').hidden = S.seg.chan!=='rank';
+  $('#chanFeed').hidden = false;
   $('#postForm').querySelectorAll('textarea,button,input').forEach(e => e.disabled = !social);
-  if(!social){ $('#postList').innerHTML = `<div class="note">커뮤니티는 claude.ai에 로그인해서 열면 쓸 수 있어요.</div>`; $('#rankList').innerHTML = `<div class="note">랭킹은 로그인 후 볼 수 있어요.</div>`; return; }
+  if(!social){ $('#postList').innerHTML = `<div class="note">커뮤니티는 로그인 후 쓸 수 있어요.</div>`; return; }
   const posts = S.posts.filter(p => p.channel===vc);
   $('#postList').innerHTML = posts.length ? posts.map(postHtml).join('') : `<div class="card">${emptyArt('첫 글을 남겨 보세요', `${ch.name} 채널 사람들과 식단 팁과 인증을 나눠요`)}</div>`;
-  // ranking
-  const chick = S.seg.rank==='chicken';
-  $('#rankTitle').textContent = chick ? '🍗 이번 주 닭가슴살 랭킹' : `${ch.name} 랭킹`;
-  const ps = Object.entries(S.profiles).filter(([,p]) => p?.nick && (chick || p.channel===vc)).map(([id,p]) => ({id, p, v: chick ? weekChicken(p) : S.seg.rank==='week' ? weekPts(p) : totalPts(p)})).sort((a,b)=>b.v-a.v);
-  if(!ps.length){ $('#rankList').innerHTML = emptyArt('아직 랭킹이 없어요','기록을 시작하면 점수가 쌓여요'); return; }
-  const top = ps.slice(0,3);
-  const podium = ps.length>=3 ? `<div class="podium">${[1,0,2].map(i=>{const x=top[i]; return `<div class="${i===0?'p1':''}"><div class="av" style="margin:0 auto 4px">${esc(x.p.avatar||'🐰')}</div><div class="nm">${esc(x.p.nick)}</div><div class="num">${x.v}${chick?'🍗':'점'}</div><div class="tiny">${i+1}위</div></div>`;}).join('')}</div>` : '';
-  const myIdx = ps.findIndex(x=>x.id===S.uid);
-  const shown = ps.slice(0,30);
-  $('#rankList').innerHTML = (chick ? `<div class="note pink small" style="margin-bottom:10px">☕ <b>매주 1등에게 메가커피 쿠폰!</b> 하루 권장 칼로리를 ±10% 안으로 지키면 닭가슴살 10개. 이번 주(${shortDate(mondayOf(todayKey()))}~${shortDate(addDays(mondayOf(todayKey()),6))}) 기준이에요.</div>` : '') + podium + shown.map((x,i)=>rankRow(x,i,chick)).join('') + (myIdx>=30 ? `<div class="tiny" style="text-align:center">⋯</div>${rankRow(ps[myIdx], myIdx, chick)}` : '');
+}
+/* ---------- Ranking tab ---------- */
+S.rankMetric = 'week'; S.rankScope = 'all'; S.likes = {};
+const weekId = () => mondayOf(todayKey());
+const metricOf = (p, m) => m==='chicken' ? weekChicken(p) : m==='all' ? totalPts(p) : weekPts(p);
+const metricUnit = m => m==='chicken' ? '🍗' : '점';
+function rankedList(scope, metric){
+  return Object.entries(S.profiles).filter(([,p]) => p?.nick && (scope==='all' || p.channel===scope))
+    .map(([id,p]) => ({id, p, v: metricOf(p, metric)})).sort((a,b) => b.v - a.v || (b.p.updatedAt||0) - (a.p.updatedAt||0));
+}
+const likeInfo = id => S.likes[id] || {count:0, mine:false};
+function podium(top, metric, small){
+  const slot = (x, r) => {
+    if(!x) return `<div class="p p${r}"><div class="crown"></div><div class="ava" style="opacity:.35">?</div><div class="nm tiny">비어 있어요</div><div class="step">${r}</div></div>`;
+    const li = likeInfo(x.id), me = x.id===S.uid;
+    return `<div class="p p${r}"><div class="crown">${r===1?'👑':r===2?'🥈':'🥉'}</div><div class="ava">${esc(x.p.avatar||'🐰')}</div>
+      <div class="nm">${esc(x.p.nick)}${me?' (나)':''}</div><div class="sc">${x.v.toLocaleString()}${metricUnit(metric)}</div>
+      <button class="thumb-btn" data-act="thumb" data-id="${esc(x.id)}" aria-pressed="${li.mine}" ${me?'disabled':''} aria-label="${esc(x.p.nick)}에게 따봉 ${li.count}개">👍 ${li.count}</button>
+      <div class="step">${r}</div></div>`;
+  };
+  top = top.filter(x => x.v > 0);
+  return `<div class="pod">${slot(top[1],2)}${slot(top[0],1)}${slot(top[2],3)}</div>`;
+}
+function renderRank(){
+  if(!S.me || !$('#v-rank')) return;
+  const m = S.rankMetric, label = {week:'이번 주 점수', all:'누적 점수', chicken:'이번 주 🍗'}[m];
+  $$('[data-seg="rmetric"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v===m));
+  const all = rankedList('all', m);
+  $('#hofAll').innerHTML = `<div class="card-h" style="margin-bottom:0"><h2>🏆 전체 TOP 3</h2><span class="tiny">${label}</span></div>
+    ${m==='chicken'?'<p class="tiny">☕ 이번 주 1등에게 메가커피 쿠폰!</p>':''}${podium(all.slice(0,3), m)}`;
+  $('#hofChans').innerHTML = Object.entries(CHANNELS).map(([k,c]) => `<div class="hof-card"><div style="display:flex;justify-content:space-between;align-items:center"><b>${c.name}</b><span class="tiny">${k===S.me.channel?'내 채널':''}</span></div>${podium(rankedList(k, m).slice(0,3), m, true)}</div>`).join('');
+  $('#rankScope').innerHTML = [['all','전체'], ...Object.entries(CHANNELS).map(([k,c]) => [k, c.name + (k===S.me.channel?' · 내 채널':'')])]
+    .map(([k,l]) => `<button class="chip" data-act="rank-scope" data-v="${k}" aria-pressed="${S.rankScope===k}" style="white-space:nowrap">${l}</button>`).join('');
+  const sc = S.rankScope, list = rankedList(sc, m);
+  $('#rankTitle').textContent = `${sc==='all'?'전체':CHANNELS[sc].name} 랭킹`;
+  $('#rankSub').textContent = label + (m==='all' ? '' : ` · ${shortDate(weekId())}~${shortDate(addDays(weekId(),6))}`);
+  if(!list.length){ $('#rankList').innerHTML = emptyArt('아직 랭킹이 없어요','기록을 시작하면 점수가 쌓여요'); return; }
+  const myIdx = list.findIndex(x => x.id===S.uid), shown = list.slice(0, 50);
+  $('#rankList').innerHTML = shown.map((x,i) => rankRow(x, i, m==='chicken')).join('') + (myIdx >= 50 ? `<div class="tiny" style="text-align:center">⋯</div>${rankRow(list[myIdx], myIdx, m==='chicken')}` : '');
+}
+async function loadLikes(){
+  try {
+    const rows = await must(sb.from('rank_likes').select('target,liker,week').limit(10000));
+    const L = {}, wk = weekId();
+    for(const r of rows){ const x = L[r.target] ||= {count:0, mine:false}; x.count++; if(r.liker===S.uid && r.week===wk) x.mine = true; }
+    S.likes = L; S.likesReady = true;
+  } catch(e){ S.likesReady = false; console.warn('likes not ready', e); }
+}
+async function toggleThumb(id){
+  if(!S.likesReady){ toast('따봉 기능이 아직 준비 중이에요 (관리자 설정 필요)'); return; }
+  const li = S.likes[id] ||= {count:0, mine:false}, wk = weekId(), on = !li.mine;
+  li.mine = on; li.count += on ? 1 : -1; renderRank();
+  try {
+    if(on) await must(sb.from('rank_likes').insert({target:id, liker:S.uid, week:wk}));
+    else await must(sb.from('rank_likes').delete().eq('target', id).eq('liker', S.uid).eq('week', wk));
+    if(on){ Snd.cheer(); toast(`${S.profiles[id]?.nick} 님에게 👍 따봉을 보냈어요!`); }
+  } catch(e){ li.mine = !on; li.count += on ? -1 : 1; renderRank(); toast('따봉을 보내지 못했어요'); }
+}
+/* Top-3 entry announcement, sent over the chat's realtime channel. */
+function myTopRank(){
+  if(!S.me) return null;
+  const all = rankedList('all', 'week').filter(x => x.v > 0), ch = rankedList(S.me.channel, 'week').filter(x => x.v > 0);
+  const ai = all.findIndex(x => x.id===S.uid), ci = ch.findIndex(x => x.id===S.uid);
+  if(ai >= 0 && ai < 3) return {scope:'전체', rank:ai+1};
+  if(ci >= 0 && ci < 3) return {scope:CHANNELS[S.me.channel].name+' 채널', rank:ci+1};
+  return null;
+}
+function announceEntry(){
+  if(S.announced || !S.chatChannel || !S.chatLive || !S.socialLoaded) return;
+  S.announced = true;
+  const r = myTopRank(); if(!r) return;
+  const msg = {uid:S.uid, text:`${r.scope} 랭킹 ${r.rank}위 ${S.me.nick}님이 냠냠핏에 입장하셨습니다!`, rank:r.rank};
+  S.chatChannel.send({type:'broadcast', event:'enter', payload:msg}).catch?.(() => {});
+}
+const seenEnter = {};
+function showEnter(p){
+  if(!p?.text || (seenEnter[p.uid] && Date.now() - seenEnter[p.uid] < 10*60000)) return;
+  seenEnter[p.uid] = Date.now();
+  const b = $('#enterBanner');
+  b.innerHTML = `<span class="big">${p.rank===1?'👑':p.rank===2?'🥈':'🥉'}</span><span>${esc(p.text)}</span>`;
+  b.hidden = false; Snd.cheer();
+  clearTimeout(showEnter.t); showEnter.t = setTimeout(() => b.hidden = true, 6000);
 }
 function rankRow(x, i, chick){
   const st = streakOf(x.p);
   if(chick) return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${i===0&&x.v>0?'☕ 메가커피 쿠폰 · ':''}누적 ${(+x.p.chicken||0).toLocaleString()}🍗${x.p.chickenDays?.[todayKey()]?' · 오늘 +10🍗':''}</span></span><span class="pts">${x.v.toLocaleString()}🍗</span></div>`;
-  return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${st?`${st}일 연속 기록 · `:''}오늘 ${x.p.today?.date===todayKey()?x.p.today.pts:0}점</span></span><span class="pts">${x.v}</span></div>`;
+  return `<div class="rk ${x.id===S.uid?'me':''}"><span class="pos ${i<3?'m'+(i+1):''}">${i+1}</span><span class="av">${esc(x.p.avatar||'🐰')}</span><span style="min-width:0"><b>${esc(x.p.nick)}</b>${x.id===S.uid?' <span class="tag">나</span>':''}<br><span class="tiny">${esc(CHANNELS[x.p.channel]?.name||'')}${st?` · ${st}일 연속`:''} · 오늘 ${x.p.today?.date===todayKey()?x.p.today.pts:0}점${likeInfo(x.id).count?` · 👍${likeInfo(x.id).count}`:''}</span></span><span class="pts">${x.v.toLocaleString()}</span></div>`;
 }
 function postHtml(p){
   const a = S.profiles[p.uid] || {nick:'알 수 없음', avatar:'🐣'};
@@ -1543,7 +1653,8 @@ function renderDataBox(){
 function setTab(t){
   S.tab = t;
   $$('.nav button').forEach(b => { if(b.dataset.tab===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
-  ['home','coach','chan','together','me'].forEach(v => $('#v-'+v).hidden = v!==t);
+  ['home','coach','chan','rank','together','me'].forEach(v => $('#v-'+v).hidden = v!==t);
+  if(t==='rank') renderRank();
   window.scrollTo({top:0});
   renderCheers();
   if(t==='chan' && S.viewChan==='all') renderChat(true);
@@ -1553,7 +1664,7 @@ function setSeg(group, v){
   $$(`[data-seg="${group}"]`).forEach(b => b.setAttribute('aria-pressed', b.dataset.v===v));
   if(group==='food'){ ['talk','photo','search','manual'].forEach(x => $('#food-'+x).hidden = x!==v); if(v==='search') renderFoodSearch(); }
   if(group==='ob'){ ['me','goal','routine'].forEach(x => $('#ob-'+x).hidden = x!==v); }
-  if(group==='chan' || group==='rank') renderChan();
+  if(group==='rmetric'){ S.rankMetric = v; renderRank(); }
   if(group==='tog') renderTogether();
 }
 
@@ -2258,11 +2369,12 @@ async function loadChat(){
 function startChat(){
   loadChat();
   try {
-    const ch = sb.channel('nyam-chat', {config:{presence:{key:S.uid}}});
-    ch.on('postgres_changes', {event:'INSERT', schema:'public', table:'chat_messages'}, ({new:m}) => onChatMsg(m))
+    const ch = sb.channel('nyam-chat', {config:{presence:{key:S.uid}, broadcast:{self:true}}});
+    ch.on('broadcast', {event:'enter'}, ({payload}) => showEnter(payload))
+      .on('postgres_changes', {event:'INSERT', schema:'public', table:'chat_messages'}, ({new:m}) => onChatMsg(m))
       .on('postgres_changes', {event:'DELETE', schema:'public', table:'chat_messages'}, ({old}) => { S.chat = S.chat.filter(x => x.id !== old.id); if(chatOpen()) renderChat(); })
       .on('presence', {event:'sync'}, () => { S.online = Object.keys(ch.presenceState()).length; const o = $('#chatOnline'); if(o) o.innerHTML = `<span class="dot-live"></span>${S.online}명 접속 중`; })
-      .subscribe(async st => { if(st === 'SUBSCRIBED'){ S.chatLive = true; try { await ch.track({at:Date.now()}); } catch {} } if(st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') S.chatLive = false; });
+      .subscribe(async st => { if(st === 'SUBSCRIBED'){ S.chatLive = true; try { await ch.track({at:Date.now()}); } catch {} announceEntry(); } if(st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') S.chatLive = false; });
     S.chatChannel = ch;
   } catch(e){ console.warn('realtime', e); }
   // Safety net if the live connection drops: refresh every 10s while the chat is open.
@@ -2409,7 +2521,9 @@ document.addEventListener('click', async e => {
     case 'gift-amt': S.gift.amount = +b.dataset.v; drawGift(); break;
     case 'gift-emoji': S.gift.emoji = b.dataset.v; drawGift(); break;
     case 'gift-send': sendGift(); break;
-    case 'go-chicken-rank': setTab('chan'); setSeg('chan','rank'); setSeg('rank','chicken'); break;
+    case 'go-chicken-rank': S.rankMetric = 'chicken'; S.rankScope = 'all'; setTab('rank'); break;
+    case 'rank-scope': S.rankScope = b.dataset.v; renderRank(); break;
+    case 'thumb': toggleThumb(id); break;
     case 'change-goal': openOnboarding(false, 'goal'); break;
     case 'view-chan': S.viewChan = b.dataset.v; renderChan(); if(b.dataset.v==='all'){ if(!S.chatReady) loadChat(); renderChat(true); } break;
     case 'chat-del': confirmDo('메시지를 지울까요?', '모든 사람의 채팅방에서 사라져요.', async () => { const id = +b.dataset.id; S.chat = S.chat.filter(x => x.id !== id); renderChat(); try { await must(sb.from('chat_messages').delete().eq('id', id)); } catch { toast('지우지 못했어요'); } }); break;
