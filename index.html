@@ -535,8 +535,8 @@ textarea.input{min-height:96px;resize:vertical}
     <section class="card">
       <h3 style="margin-bottom:8px">🍗 닭가슴살은 이렇게 쌓여요</h3>
       <ul class="bul small muted">
-        <li>끼니 기록 1회 🍗+5 (하루 최대 20)</li>
-        <li>운동 기록 🍗+20, 30분 이상이면 🍗+10 더</li>
+        <li>끼니를 1번 이상 기록 🍗+10</li>
+        <li>운동을 1번 이상 기록 🍗+10</li>
         <li>권장 칼로리 ±10% 안 🍗+20</li>
         <li>단백질 목표 90% 이상 🍗+20</li>
         <li>탄수·지방이 목표 범위 안 🍗+10</li>
@@ -945,10 +945,28 @@ function macroOk(t, T, ch){
 }
 const weekChicken = p => weekPts(p);
 const kcalHit = (t, T) => t.meals > 0 && Math.abs(t.kcal - T.kcal) <= T.kcal*0.1;
+const SCORE_VER = 2;
+// When the 🍗 rules change, re-score the days this device loaded and adjust the running total once.
+function rescoreIfNeeded(){
+  if(!S.me || (+S.me.scoreVer||1) >= SCORE_VER) return;
+  const T = targetsFor(S.me), p = {...S.me, dayPts:{...(S.me.dayPts||{})}};
+  let delta = 0;
+  for(const [k, d] of Object.entries(S.days)){
+    const old = +p.dayPts[k] || 0, nw = dayPoints(d, T, p.channel);
+    delta += nw - old;
+    if(nw) p.dayPts[k] = nw; else delete p.dayPts[k];
+  }
+  p.lifetime = Math.max(0, (+p.lifetime||0) + delta);
+  const td = p.today?.date === todayKey() ? S.days[todayKey()] : null;
+  if(td) p.today = {...p.today, pts: +p.dayPts[todayKey()] || 0};
+  p.scoreVer = SCORE_VER;
+  store.saveProfile(p);
+}
 function dayPoints(d, T, ch){
   const t = dayTotals(d); if(!T) return 0;
-  let pts = Math.min(t.meals,4)*5;
-  if(t.works){ pts += 20; if(t.min>=30) pts += 10; }
+  let pts = 0;
+  if(t.meals) pts += 10;   // 끼니를 1번 이상 기록
+  if(t.works) pts += 10;   // 운동을 1번 이상 기록
   if(t.meals){
     if(Math.abs(t.kcal - T.kcal) <= T.kcal*0.1) pts += 20;
     if(t.p >= T.p*0.9) pts += 20;
@@ -1085,6 +1103,7 @@ async function startSession(user){
   S.dirty = LS.get('dirty:'+S.uid) || {};
   try { await loadMine(); } catch(e){ console.warn(e); toast(errText(e?.code||'load', e?.message)); }
   if(!S.me) openOnboarding(true);
+  else rescoreIfNeeded();
   showNotice();
   renderAll();
   loadSocial(); loadFoods(); claimGift(); startChat();
@@ -1701,7 +1720,7 @@ function saveOnboarding(e){
     targetWeight: +$('#obTW').value || null, activity: +$('#obAct').value, channel:d.channel, routine:d.routine,
     code: old.code || Math.random().toString(36).slice(2,8).toUpperCase(),
     dayPts: old.dayPts||{}, lifetime: old.lifetime||0, bonus: old.bonus||0, badges: old.badges||[], claimed: old.claimed||{},
-    createdAt: old.createdAt || Date.now(), updatedAt: Date.now(),
+    createdAt: old.createdAt || Date.now(), updatedAt: Date.now(), scoreVer: old.scoreVer || SCORE_VER,
   };
   if(!old.weightDate) p.weightDate = todayKey();
   store.saveProfile(p);
